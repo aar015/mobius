@@ -1,10 +1,10 @@
 /*[Dimensions]*/
-$fn = 50;
-inner_x = 125;
-inner_y = 125;
-wall_thickness = 4.0;
+$fn = 100;
+inner_x = 20;
+inner_y = 30;
+wall_thickness = 3.2;
 level_thickness = 1.6;
-level_heights = [0, 30, 35, 60, 25];
+level_heights = [0, 10, 15];
 level_retainer_protrusion = 1.6;
 level_retainer_thickness = 1.6;
 level_retainer_overflow = 1.6;
@@ -64,15 +64,14 @@ module level_retainers()
     difference()
     {
         square([outer_x - 2 * wall_thickness, outer_y - 2 * wall_thickness], true);
-        square([inner_x, inner_y], true);
-        translate([0, - (inner_y + outer_y) / 2])
-        square([outer_x, outer_y], true);
+        translate([0, - level_retainer_protrusion / 2 - 0.01])
+        square([inner_x + 2 * level_retainer_overflow, inner_y + 2 * level_retainer_overflow + level_retainer_protrusion], true);
     }
 }
 
 module door(offset=0)
 {
-    translate([0, wall_thickness / 2 - door_inner_thickness - outer_x / 2 + wall_thickness / 2, outer_z / 2 + (wall_thickness + tolerence) / 2])
+    translate([0, wall_thickness / 2 - door_inner_thickness - outer_y / 2 + wall_thickness / 2, outer_z / 2 + (wall_thickness + tolerence) / 2])
     hull()
     {
         translate([0, door_inner_thickness / 2 + offset / 2, 0])
@@ -89,7 +88,11 @@ module case()
     {
         difference()
         {
-            walls();
+            union()
+            {
+                walls();
+                level_retainers();
+            }
             door(tolerence);
         }
         intersection()
@@ -97,7 +100,6 @@ module case()
             door();
             walls();
         }
-        level_retainers();
         for(i = [1:len(level_heights) - 1])
         translate([0, 0, wall_thickness + tolerence + sum(level_heights, i) + (i - 1) * intra_retainer_offset])
         level();
