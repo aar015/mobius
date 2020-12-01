@@ -31,6 +31,9 @@ network_plug_x = 24;
 network_plug_y = 43.2;
 network_rack_y = 100;
 network_wall = 1.6;
+network_wall_length = 5;
+network_plug_wall_length = 3;
+network_back_wall_length = 10;
 network_support = 3.2;
 
 /*[Power Settings]*/
@@ -74,6 +77,10 @@ inner_z = network_z + power_z + nanopi_z + topfan_z + 4 * rack_thickness + toler
 outer_x = inner_x + 2 * (retainer_protrusion + tolerence + wall_thickness);
 outer_y = inner_y + 2 * (retainer_protrusion + tolerence + wall_thickness);
 outer_z = inner_z + 2 * wall_thickness;
+network_center_x = -network_plug_x / 2 - network_wall / 2 - tolerence;
+network_center_y = (inner_y - network_y) / 2 + retainer_protrusion; 
+network_plug_center_x = network_x / 2 + network_wall / 2 + tolerence;
+network_plug_center_y = (inner_y - network_plug_y) / 2 + retainer_protrusion;
 
 /*[Hidden Settings]*/
 which_model = "viewport";
@@ -275,13 +282,11 @@ module door()
 module network_rack()
 {
     // Model Network Components as Cubes
-    #translate([0, 0, rack_thickness + tolerence])
+    *translate([0, 0, rack_thickness + tolerence])
     {
-        translate([-network_plug_x / 2 - network_wall / 2 - tolerence,
-                   (inner_y - network_y) / 2 + retainer_protrusion, 25.2 / 2])
+        translate([network_center_x, network_center_y, 25.2 / 2])
         cube([network_x, network_y, 25.2], true);
-        translate([network_x / 2 + network_wall / 2 + tolerence,
-                   (inner_y - network_plug_y) / 2 + retainer_protrusion, 26.4 / 2])
+        translate([network_plug_center_x, network_plug_center_y, 26.4 / 2])
         cube([network_plug_x, network_plug_y, 26.4], true);
     }
 
@@ -299,12 +304,53 @@ module network_rack()
                     inner_y / 2 - network_rack_y])
         square([network_support + (inner_x - network_x - network_plug_x - network_wall - 2 * tolerence) / 2, 
                 network_rack_y]);
+
         translate([0, (inner_y - network_support) / 2])
         square([inner_x, network_support], true);
+
+        translate([-network_x / 2 - network_plug_x / 2 - network_wall / 2 - tolerence,
+                   inner_y / 2 - network_rack_y])
+        square([network_x, network_support + network_rack_y - network_y + retainer_protrusion]);
+
+        translate([network_x / 2 + network_wall / 2 + tolerence,
+                   inner_y / 2 + retainer_protrusion - network_plug_y])
+        square([network_plug_x, 2 * network_support], true);
+    }
+
+    fillet_extrude($rack_fillet, 0.75 * network_z)
+    for(i = [-1:2:1])
+    {
+        translate([network_center_x + i * (network_x - network_wall_length + tolerence) / 2, 
+                   network_center_y + (network_wall_length - network_y - tolerence) / 2])
+        difference()
+        {
+            translate([i * network_wall / 2, -network_wall / 2])
+            square([network_wall_length + tolerence + network_wall, 
+                    network_wall_length + tolerence + network_wall], true);
+            square([network_wall_length + tolerence, network_wall_length + tolerence], true);
+        }
+
+        translate([network_center_x + i * (network_x + network_wall + 2 * tolerence) / 2,
+                   network_center_y + network_y / 2 - network_back_wall_length / 2])
+        square([network_wall, network_back_wall_length], true);
+
+        translate([network_plug_center_x + i * (network_plug_x - network_plug_wall_length + tolerence) / 2, 
+                   network_plug_center_y + (network_plug_wall_length - network_plug_y - tolerence) / 2])
+        difference()
+        {
+            translate([i * network_wall / 2, -network_wall / 2])
+            square([network_plug_wall_length + tolerence + network_wall, 
+                    network_plug_wall_length + tolerence + network_wall], true);
+            square([network_plug_wall_length + tolerence, network_plug_wall_length + tolerence], true);
+        }
+
+        translate([network_plug_center_x + i * (network_plug_x + network_wall + 2 * tolerence) / 2,
+                   network_plug_center_y + network_plug_y / 2 - network_back_wall_length / 2])
+        square([network_wall, network_back_wall_length], true);
     }
 }
 
-$rack_fillet = 0;
+$rack_fillet = 0.4;
 !network_rack();
 
 // Need To implement Power Rack
