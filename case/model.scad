@@ -4,8 +4,8 @@ viewport_fn = 25;
 tolerence = 0.2;
 
 /*[Body Settings]*/
-inner_x = 130.4;
-inner_y = 130.4;
+inner_x = 135.2;
+inner_y = 135.2;
 wall_thickness = 3.2;
 render_inner_fillet = 0.4;
 render_outer_fillet = 0.8;
@@ -13,28 +13,23 @@ viewport_inner_fillet = 0;
 viewport_outer_fillet = 0;
 
 /*[Rack Settings]*/
-rack_thickness = 1.6;
+rack_thickness = 3.2;
+rack_support = 3.2;
+rack_wall_per_z = 0.75;
+rack_wall_thickness = 3.2;
 render_rack_fillet = 0.4;
 viewport_rack_fillet = 0;
 
 /*[Retainer Settings]*/
-retainer_thickness = 2.4;
-retainer_protrusion = 2.4;
+retainer_thickness = 3.2;
+retainer_protrusion = 3.2;
 render_retainer_fillet = 0.4;
 viewport_retainer_fillet = 0;
 
 /*[Network Settings]*/
-network_x = 100.4;
-network_y = 98.4;
+network_y = 100.4 - retainer_protrusion;
 network_z = 28;
-network_plug_x = 24;
-network_plug_y = 43.2;
-network_rack_y = 100;
-network_wall = 1.6;
-network_wall_length = 5;
-network_plug_wall_length = 3;
-network_back_wall_length = 10;
-network_support = 3.2;
+network_objects = [[24, 43.2, 5, 10], [100.4, 98.4, 3, 10]];
 
 /*[Power Settings]*/
 power_x = 70;
@@ -77,10 +72,6 @@ inner_z = network_z + power_z + nanopi_z + topfan_z + 4 * rack_thickness + toler
 outer_x = inner_x + 2 * (retainer_protrusion + tolerence + wall_thickness);
 outer_y = inner_y + 2 * (retainer_protrusion + tolerence + wall_thickness);
 outer_z = inner_z + 2 * wall_thickness;
-network_center_x = -network_plug_x / 2 - network_wall / 2 - tolerence;
-network_center_y = (inner_y - network_y) / 2 + retainer_protrusion; 
-network_plug_center_x = network_x / 2 + network_wall / 2 + tolerence;
-network_plug_center_y = (inner_y - network_plug_y) / 2 + retainer_protrusion;
 
 /*[Hidden Settings]*/
 which_model = "viewport";
@@ -147,8 +138,18 @@ module logo()
 
 }
 
-module rack(x, y, mode="center")
+module rack(x, y, z, objects=[], mode="center")
 {
+    function sum_x(i=len(objects), j=0, r=0) = (j == i) ? r : sum_x(i, j + 1, r + objects[j][0]);
+
+    total_x = sum_x() + (len(objects) - 1) * (rack_wall_thickness + 2 * tolerence) + 2 * (rack_wall_thickness + tolerence);
+    support = max(rack_support, 2 * rack_wall_thickness + 4 * tolerence);
+    
+    assert(total_x + 2 * tolerence - 0.001 <= inner_x, str("Inner x too small to fit rack of total x = ", total_x));
+
+    function center_x(i=0) = (objects[i][0] - total_x) / 2 + (1 + i) * rack_wall_thickness + sum_x(i) + (1 + 2 * i) * tolerence;
+    function center_y(i=0) = (inner_y - objects[i][1]) / 2 + retainer_protrusion;
+
     fillet_extrude($rack_fillet, rack_thickness)
     {
         difference()
@@ -166,7 +167,54 @@ module rack(x, y, mode="center")
             translate([-retainer_protrusion / 2, -y - retainer_protrusion])
             square([x + retainer_protrusion, inner_y], true);
         }
+
+        if(len(objects) > 0)
+        for(i = [0:(len(objects) - 1)])
+        {
+            translate([0, (inner_y - support / 2 + retainer_protrusion) / 2])
+            square([inner_x, support / 2 - retainer_protrusion], true);
+
+            translate([0, center_y(i) - objects[i][1] / 2])
+            square([inner_x, support], true);
+
+            for(j = [-1:2:1])
+            translate([center_x(i) + j * objects[i][0] / 2, (inner_y - y) / 2])
+            square([support, y], true);
+        }
+
         children();
+    }
+
+    if(len(objects) > 0)
+    fillet_extrude($rack_fillet, rack_wall_per_z * z + rack_thickness)
+    for(i = [0:(len(objects) - 1)])
+    translate([center_x(i), center_y(i), 0])
+    {
+        for(j = [-1:2:1])
+        {
+            translate([j * (objects[i][0] - objects[i][2] + tolerence) / 2, 
+                       (-objects[i][1] + objects[i][3] - tolerence) / 2])
+            difference()
+            {
+                translate([j * rack_wall_thickness / 2, -rack_wall_thickness / 2])
+                square([objects[i][2] + tolerence + rack_wall_thickness,
+                        objects[i][3] + tolerence + rack_wall_thickness], true);
+                translate([-j * 0.1, 0.1])
+                square([objects[i][2] + tolerence + 0.2,
+                        objects[i][3] + tolerence + 0.2], true);
+            }
+
+            translate([j * (objects[i][0] + rack_wall_thickness + 2 * tolerence) / 2, 
+                       (objects[i][1] - objects[i][3]) / 2])
+            square([rack_wall_thickness, objects[i][3]], true);
+        }
+    }
+
+    *if(len(objects) > 0)
+    for(i = [0:(len(objects) - 1)])
+    {
+        translate([center_x(i), center_y(i), z / 2 + rack_thickness])
+        cube([objects[i][0], objects[i][1], z - 2 * tolerence], true);
     }
 }
 
@@ -278,80 +326,10 @@ module door()
     // Need to put in divet for magnet
 }
 
-// Need to implement Network Rack
 module network_rack()
 {
-    // Model Network Components as Cubes
-    *translate([0, 0, rack_thickness + tolerence])
-    {
-        translate([network_center_x, network_center_y, 25.2 / 2])
-        cube([network_x, network_y, 25.2], true);
-        translate([network_plug_center_x, network_plug_center_y, 26.4 / 2])
-        cube([network_plug_x, network_plug_y, 26.4], true);
-    }
-
-    // Model Rack
-    rack(inner_x, network_rack_y)
-    {
-        translate([(network_x - network_plug_x) / 2, (inner_y - network_rack_y) / 2])
-        square([network_wall + 2 *(network_support + tolerence), network_rack_y], true);
-
-        translate([-inner_x / 2, inner_y / 2 - network_rack_y])
-        square([network_support + (inner_x - network_x - network_plug_x - network_wall - 2 * tolerence) / 2, 
-                network_rack_y]);
-        
-        translate([(network_x + network_plug_x + network_wall + 2 * tolerence) / 2 - network_support,
-                    inner_y / 2 - network_rack_y])
-        square([network_support + (inner_x - network_x - network_plug_x - network_wall - 2 * tolerence) / 2, 
-                network_rack_y]);
-
-        translate([0, (inner_y - network_support) / 2])
-        square([inner_x, network_support], true);
-
-        translate([-network_x / 2 - network_plug_x / 2 - network_wall / 2 - tolerence,
-                   inner_y / 2 - network_rack_y])
-        square([network_x, network_support + network_rack_y - network_y + retainer_protrusion]);
-
-        translate([network_x / 2 + network_wall / 2 + tolerence,
-                   inner_y / 2 + retainer_protrusion - network_plug_y])
-        square([network_plug_x, 2 * network_support], true);
-    }
-
-    fillet_extrude($rack_fillet, 0.75 * network_z)
-    for(i = [-1:2:1])
-    {
-        translate([network_center_x + i * (network_x - network_wall_length + tolerence) / 2, 
-                   network_center_y + (network_wall_length - network_y - tolerence) / 2])
-        difference()
-        {
-            translate([i * network_wall / 2, -network_wall / 2])
-            square([network_wall_length + tolerence + network_wall, 
-                    network_wall_length + tolerence + network_wall], true);
-            square([network_wall_length + tolerence, network_wall_length + tolerence], true);
-        }
-
-        translate([network_center_x + i * (network_x + network_wall + 2 * tolerence) / 2,
-                   network_center_y + network_y / 2 - network_back_wall_length / 2])
-        square([network_wall, network_back_wall_length], true);
-
-        translate([network_plug_center_x + i * (network_plug_x - network_plug_wall_length + tolerence) / 2, 
-                   network_plug_center_y + (network_plug_wall_length - network_plug_y - tolerence) / 2])
-        difference()
-        {
-            translate([i * network_wall / 2, -network_wall / 2])
-            square([network_plug_wall_length + tolerence + network_wall, 
-                    network_plug_wall_length + tolerence + network_wall], true);
-            square([network_plug_wall_length + tolerence, network_plug_wall_length + tolerence], true);
-        }
-
-        translate([network_plug_center_x + i * (network_plug_x + network_wall + 2 * tolerence) / 2,
-                   network_plug_center_y + network_plug_y / 2 - network_back_wall_length / 2])
-        square([network_wall, network_back_wall_length], true);
-    }
+    rack(inner_x, network_y, network_z, network_objects);
 }
-
-$rack_fillet = 0.4;
-!network_rack();
 
 // Need To implement Power Rack
 module power_rack()
