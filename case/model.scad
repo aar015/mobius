@@ -1,71 +1,70 @@
 /*[Global Settings]*/
-render_fn = 100;
-viewport_fn = 25;
+render_fn = 24;
+viewport_fn = 12;
 tolerence = 0.2;
+viewport_mult = 1;
 
 /*[Body Settings]*/
-inner_x = 135.2;
-inner_y = 135.2;
-wall_thickness = 3.2;
+inner_x = 130.8;
+inner_y = 120.8;
+wall_thickness = 4.0;
 render_inner_fillet = 0.4;
 render_outer_fillet = 0.8;
-viewport_inner_fillet = 0;
-viewport_outer_fillet = 0;
+viewport_inner_fillet = 0.4 * viewport_mult;
+viewport_outer_fillet = 0.8 * viewport_mult;
 
 /*[Rack Settings]*/
 rack_thickness = 3.2;
-rack_support = 3.2;
-rack_wall_per_z = 0.75;
-rack_wall_thickness = 3.2;
+rack_wall_per_z = 0.5;
+rack_wall_thickness = 1.6;
+rack_support = max(0, 2 * rack_wall_thickness + 4 * tolerence);
 render_rack_fillet = 0.4;
-viewport_rack_fillet = 0;
+viewport_rack_fillet = 0.4 * viewport_mult;
 
 /*[Retainer Settings]*/
-retainer_thickness = 3.2;
-retainer_protrusion = 3.2;
+retainer_thickness = 2.4;
+retainer_protrusion = 2.4;
 render_retainer_fillet = 0.4;
-viewport_retainer_fillet = 0;
+viewport_retainer_fillet = 0.4 * viewport_mult;
 
 /*[Network Settings]*/
-network_y = 100.4 - retainer_protrusion;
-network_z = 28;
-network_objects = [[24, 43.2, 5, 10], [100.4, 98.4, 3, 10]];
+network_y = 98.8;
+network_z = 26.4;
+network_objects = [[23.75, 43.2, 4.8, 10], [100.4, 98.4, 6.8, 15]];
 
 /*[Power Settings]*/
-power_x = 70;
-power_y = 100;
-power_z = 30.8;
-power_rack_x = 72.4;
-
-/*[Memory Settings]*/
-memory_x = 30;
-memory_y = 90;
-memory_z = 9.2;
-memory_rack_x = 49.6;
+power_y = 98.8;
+power_z = 30.0;
+power_objects = [[69.7, 101.4, 4.8, 15], [9.2, 101.4, 1.2, 15], [9.2, 101.4, 1.2, 15], [9.2, 101.4, 1.2, 15]];
 
 /*[NanoPi Settings]*/
-nanopi_y = 100;
-nanopi_z = 61.2;
+nanopi_y = 98.8;
+nanopi_z = 62.4;
+
+/*[Fan Settings]*/
+fan_mount_large_r = 10.4;
+fan_mount_small_r = 5.6;
+fan_mount_thickness = 2.0;
 
 /*[Back Fan Settings]*/
-backfan_outer = 60;
-backfan_inner = 55;
+backfan_outer = 60.0;
+backfan_inner = 55.0;
 
 /*[Top Fan Settings]*/
 topfan_y = inner_y;
-topfan_z = 25;
+topfan_z = 20.0 + tolerence;
 topfan_outer = 120;
-topfan_inner = 110;
+topfan_inner = 105;
 
 /*[Door Settings]*/
-door_inner_thickness = 1.6;
-door_dovetail_angle = 45;
+door_inner_thickness = 1.2;
+door_dovetail_angle = 38.0;
 render_door_fillet = 0.4;
-viewport_door_fillet = 0;
+viewport_door_fillet = 0.4 * viewport_mult;
 
 /*[Honeycomb Settings]*/
 render_honeycomb_fillet = 0.4;
-viewport_honeycomb_fillet = 0;
+viewport_honeycomb_fillet = 0 * viewport_mult;
 
 /*[Calculated Dimensions]*/
 inner_z = network_z + power_z + nanopi_z + topfan_z + 4 * rack_thickness + tolerence;
@@ -91,9 +90,9 @@ module dovetail()
 
 module fillet_extrude(r, height)
 {
+    translate([0, 0, r])
     minkowski()
     {
-        translate([0, 0, r])
         linear_extrude(height - 2 * r)
         offset(-r)
         children();
@@ -135,18 +134,13 @@ module honeycomb(r=10, stroke=1, fill=1)
 // Need to implement logo
 module logo()
 {
-
 }
 
-module rack(x, y, z, objects=[], mode="center")
+module rack(x, y, z, objects=[])
 {
     function sum_x(i=len(objects), j=0, r=0) = (j == i) ? r : sum_x(i, j + 1, r + objects[j][0]);
-
     total_x = sum_x() + (len(objects) - 1) * (rack_wall_thickness + 2 * tolerence) + 2 * (rack_wall_thickness + tolerence);
-    support = max(rack_support, 2 * rack_wall_thickness + 4 * tolerence);
-    
-    assert(total_x + 2 * tolerence - 0.001 <= inner_x, str("Inner x too small to fit rack of total x = ", total_x));
-
+    assert(total_x <= inner_x, str("Inner x too small to fit rack of total x = ", total_x));
     function center_x(i=0) = (objects[i][0] - total_x) / 2 + (1 + i) * rack_wall_thickness + sum_x(i) + (1 + 2 * i) * tolerence;
     function center_y(i=0) = (inner_y - objects[i][1]) / 2 + retainer_protrusion;
 
@@ -154,32 +148,31 @@ module rack(x, y, z, objects=[], mode="center")
     {
         difference()
         {
-            square([x + 2 * retainer_protrusion, inner_y + 2 * retainer_protrusion], true);
+            offset(rack_support / 2)
+            square([x + 2 * retainer_protrusion - rack_support, inner_y + 2 * retainer_protrusion - rack_support], true);
             translate([0, (inner_y - y) / 2])
-            square([x, y], true);
-            if (mode == "center")
+            offset(rack_support / 2)
+            square([x - 2 * (rack_support - retainer_protrusion) - rack_support,
+                    y - 2 * (rack_support - retainer_protrusion) - rack_support], true);
             translate([0, -y - retainer_protrusion])
-            square([x, inner_y], true);
-            if (mode == "left")
-            translate([retainer_protrusion / 2, -y - retainer_protrusion])
-            square([x + retainer_protrusion, inner_y], true);
-            if (mode == "right")
-            translate([-retainer_protrusion / 2, -y - retainer_protrusion])
-            square([x + retainer_protrusion, inner_y], true);
+            offset(rack_support / 2)
+            square([x - rack_support, inner_y - rack_support], true);
         }
+
+        for(i = [-1:2:1])
+        translate([i * (x / 2 + retainer_protrusion / 2), 
+                   - inner_y / 2 - retainer_protrusion / 2])
+        square(retainer_protrusion, true);
 
         if(len(objects) > 0)
         for(i = [0:(len(objects) - 1)])
         {
-            translate([0, (inner_y - support / 2 + retainer_protrusion) / 2])
-            square([inner_x, support / 2 - retainer_protrusion], true);
-
             translate([0, center_y(i) - objects[i][1] / 2])
-            square([inner_x, support], true);
+            square([inner_x, rack_support], true);
 
             for(j = [-1:2:1])
             translate([center_x(i) + j * objects[i][0] / 2, (inner_y - y) / 2])
-            square([support, y], true);
+            square([rack_support, y], true);
         }
 
         children();
@@ -263,52 +256,10 @@ module body()
         // Remove Space For Fan Grates
     }
 
-    //Insert Retainers for Network, Nano Pi, and Top Fan Racks
+    //Insert Rack Retainers
     for(i = [[0, 0], [1, network_z], [2, network_z + power_z], [3, network_z + power_z + nanopi_z]])
     translate([0, 0, wall_thickness - retainer_thickness + i[0] * rack_thickness + i[1]])
     retainer(inner_x, inner_y);
-
-    // Insert Retainers for Power and Memory Racks
-    translate([(power_rack_x -inner_x) / 2, (inner_y - power_y) / 2, 
-               wall_thickness - retainer_thickness + rack_thickness + network_z])
-    retainer(power_rack_x, power_y);
-
-    for(i = [1:2])
-    translate([0, 0, wall_thickness - retainer_thickness + network_z + rack_thickness + i * (memory_z + rack_thickness)])
-    difference()
-    {
-        retainer(inner_x, inner_y);
-        translate([-outer_x / 2, -0.5])
-        cube([outer_x, outer_y + 2, outer_z], true);
-    }
-
-    for(i = [0:2])
-    translate([(inner_x - memory_rack_x) / 2, (inner_y - power_y) / 2, 
-               wall_thickness - retainer_thickness + rack_thickness + network_z + i * (memory_z + rack_thickness)])
-    retainer(memory_rack_x, power_y);
-
-    translate([(power_rack_x - memory_rack_x) / 2, (inner_y - power_y + $retainer_fillet + tolerence) / 2, 
-               wall_thickness - retainer_thickness + rack_thickness + network_z])
-    {
-        fillet_extrude($retainer_fillet, power_z + retainer_thickness + rack_thickness)
-        square([inner_x - memory_rack_x - power_rack_x - 2 * (retainer_protrusion + tolerence),
-                power_y + 2 * retainer_protrusion + $retainer_fillet + tolerence], true);
-        for(i = [0:1])
-        translate([0, 0, retainer_thickness / 2 + i * (retainer_thickness + rack_thickness + 2 * tolerence)])
-        cube([inner_x - memory_rack_x - power_rack_x - 2 * (retainer_protrusion + tolerence) + 0.1,
-              power_y + 2 * retainer_protrusion + $retainer_fillet + tolerence,
-              retainer_thickness - 2 * $retainer_fillet], true);
-        for(j = [1:2])
-        translate([$retainer_fillet, 0, j * (memory_z + rack_thickness)])
-        for(i = [0:1])
-        translate([0, 0, retainer_thickness / 2 + i * (retainer_thickness + rack_thickness + 2 * tolerence)])
-        cube([inner_x - memory_rack_x - power_rack_x - 2 * (retainer_protrusion + tolerence) + 0.1 - $retainer_fillet,
-              power_y + 2 * retainer_protrusion + $retainer_fillet + tolerence,
-              retainer_thickness - 2 * $retainer_fillet], true);
-        translate([0, $retainer_fillet / 2, $retainer_fillet / 2])
-        cube([inner_x - memory_rack_x - power_rack_x - 2 * (retainer_protrusion + tolerence),
-               power_y + 2 * retainer_protrusion + tolerence, $retainer_fillet], true);
-    }
 
     // Need to make grates for fans
 }
@@ -331,16 +282,9 @@ module network_rack()
     rack(inner_x, network_y, network_z, network_objects);
 }
 
-// Need To implement Power Rack
 module power_rack()
 {
-    rack(power_rack_x, power_y, "left");
-}
-
-// Need to implement Memory Rack
-module memory_rack()
-{
-    rack(memory_rack_x, power_y, "right");
+    rack(inner_x, power_y, power_z, power_objects);
 }
 
 // Need to implement Nano Pi Rack
@@ -350,15 +294,68 @@ module nanopi_rack()
 }
 
 // Need to implement Nano Pi Mounts
-module nanopi_mounts()
+module nanopi_mount()
 {
-
+    translate([0, 0, 5])
+    cube(10, true);
 }
 
 // Need to implement Top Fan Rack
 module topfan_rack()
 {
-    rack(inner_x, topfan_y);
+    difference()
+    {
+        rack(inner_x, topfan_y)
+        {
+            for(i = [-1:2:1])
+            for(j = [-1:2:1])
+            translate([i * topfan_inner / 2, j * topfan_inner / 2])
+            {
+                difference()
+                {
+                    union()
+                    {
+                        circle(fan_mount_large_r / 2 + rack_support);
+
+                        translate([i * (inner_x - topfan_inner) / 4, 0])
+                        square([(inner_x - topfan_inner) / 2, fan_mount_large_r + 2 * rack_support], true);
+
+                        translate([0, j * (inner_y - topfan_inner) / 4])
+                        square([fan_mount_large_r + 2 * rack_support, (inner_y - topfan_inner) / 2], true);
+                    }
+                    circle(fan_mount_small_r / 2);
+                }
+            }
+        }
+
+        for(i = [-1:2:1])
+        for(j = [-1:2:1])
+        translate([i * topfan_inner / 2, j * topfan_inner / 2, fan_mount_thickness])
+        {
+            fillet_extrude($rack_fillet, rack_thickness - fan_mount_thickness + 0.1)
+            circle(fan_mount_large_r / 2);
+
+            translate([0, 0, rack_thickness - fan_mount_thickness - $rack_fillet])
+            difference()
+            {
+                linear_extrude(2 * $rack_fillet)
+                circle(fan_mount_large_r / 2 + $rack_fillet);
+                rotate_extrude(angle=360)
+                translate([fan_mount_large_r / 2 + $rack_fillet, 0])
+                circle($rack_fillet);
+            }
+
+            translate([0, 0, - $rack_fillet])
+            difference()
+            {
+                linear_extrude(2 * $rack_fillet)
+                circle(fan_mount_small_r / 2 + $rack_fillet);
+                rotate_extrude(angle=360)
+                translate([fan_mount_small_r / 2 + $rack_fillet, 0])
+                circle($rack_fillet);
+            }
+        }
+    }
 }
 
 if (which_model == "viewport")
@@ -378,12 +375,8 @@ if (which_model == "viewport")
     *door();
     translate([0, 0, wall_thickness + tolerence])
     network_rack();
-    translate([(power_rack_x - inner_x) / 2, 0, wall_thickness + tolerence + network_z + rack_thickness])
+    translate([0, 0, wall_thickness + tolerence + network_z + rack_thickness])
     power_rack();
-    for(i = [0:2])
-    translate([(inner_x - memory_rack_x) / 2, 0, 
-               wall_thickness + tolerence + network_z + rack_thickness + i * (memory_z + rack_thickness)])
-    memory_rack();
     translate([0, 0, wall_thickness + tolerence + network_z + power_z + 2 * rack_thickness])
     nanopi_rack();
     // Need to arrange nanopi mounts
@@ -402,12 +395,18 @@ else
 
     if (which_model == "body")
     {
+        translate([outer_z / 2, 0, outer_y / 2])
+        rotate(-90, [0, 1, 0])
+        rotate(90, [0, 0, 1])
         body();
     }
 
     else if (which_model == "door")
     {
-        door();
+        translate([outer_z / 2, 0, 0])
+        rotate(-90, [0, 1, 0])
+        rotate(90, [0, 0, 1])
+        door();;
     }
 
     else if (which_model == "network_rack")
@@ -418,11 +417,6 @@ else
     else if (which_model == "power_rack")
     {
         power_rack();
-    }
-
-    else if (which_model == "memory_rack")
-    {
-        memory_rack();
     }
 
     else if (which_model == "nanopi_rack")
