@@ -38,8 +38,15 @@ power_z = 30.0;
 power_objects = [[69.7, 101.4, 4.8, 15], [9.2, 101.4, 1.2, 15], [9.2, 101.4, 1.2, 15], [9.2, 101.4, 1.2, 15]];
 
 /*[NanoPi Settings]*/
-nanopi_y = 98.8;
+nanopi_x = [15, 7];
+nanopi_y = 92.0;
 nanopi_z = 62.4;
+nanopi_count = 4;
+nanopi_mount_y = 42;
+nanopi_mount_z = 42;
+nanopi_screw = 3;
+nanopi_screw_support = 1.2;
+nanopi_nut = 6.2;
 
 /*[Fan Settings]*/
 fan_mount_large_r = 10.4;
@@ -71,6 +78,7 @@ inner_z = network_z + power_z + nanopi_z + topfan_z + 4 * rack_thickness + toler
 outer_x = inner_x + 2 * (retainer_protrusion + tolerence + wall_thickness);
 outer_y = inner_y + 2 * (retainer_protrusion + tolerence + wall_thickness);
 outer_z = inner_z + 2 * wall_thickness;
+pi_offset = (inner_x - nanopi_count * (nanopi_x[0] + nanopi_x[1])) / (nanopi_count + 1);
 
 /*[Hidden Settings]*/
 which_model = "viewport";
@@ -290,14 +298,79 @@ module power_rack()
 // Need to implement Nano Pi Rack
 module nanopi_rack()
 {
-    rack(inner_x, nanopi_y);
+    rack(inner_x, nanopi_y)
+    {
+        for(i = [0:1])
+        translate([0, i * nanopi_mount_y - nanopi_y + inner_y / 2])
+        square([inner_x, nanopi_nut + 2 * nanopi_screw_support + 2 * tolerence], true);
+
+        for(i = [0:nanopi_count - 1])
+        translate([-inner_x / 2 + (i + 1) * pi_offset + i * (nanopi_x[0] + nanopi_x[1]) + nanopi_x[0] + rack_thickness / 2, 
+                   nanopi_mount_y / 2 - nanopi_y + inner_y / 2])
+        square([rack_thickness, nanopi_mount_y], true);
+    }
+
+    for(i = [0:nanopi_count - 1])
+    translate([-inner_x / 2 + (i + 1) * pi_offset + i * (nanopi_x[0] + nanopi_x[1]) + nanopi_x[0], 
+               nanopi_mount_y / 2 - nanopi_y + inner_y / 2, rack_thickness])
+    nanopi_mount();
+
+    *for(i = [0:nanopi_count - 1])
+    translate([-inner_x / 2 + (i + 1) * pi_offset + i * (nanopi_x[0] + nanopi_x[1]), 
+               nanopi_mount_y / 2 - nanopi_y + inner_y / 2, rack_thickness])
+    translate([(nanopi_x[0] + nanopi_x[1]) / 2, 0, nanopi_z / 2])
+    cube([nanopi_x[0] + nanopi_x[1], nanopi_mount_y, nanopi_mount_z], true);
 }
 
 // Need to implement Nano Pi Mounts
 module nanopi_mount()
 {
-    translate([0, 0, 5])
-    cube(10, true);
+    translate([rack_thickness, 0, 0])
+    rotate(-90, [0, 0, 1])
+    rotate(90, [1, 0, 0])
+    difference()
+    {
+        fillet_extrude($rack_fillet, rack_thickness)
+        {
+            for(i = [-1:2:1])
+            translate([i * nanopi_mount_y / 2, 0])
+            difference()
+            {
+                hull()
+                {
+                    translate([0, (nanopi_z - nanopi_mount_z) / 2])
+                    circle(nanopi_nut / 2 + nanopi_screw_support + tolerence, $fn=48);
+
+                    translate([0, 0.5 - rack_thickness / 2])
+                    square([nanopi_nut + 2 * nanopi_screw_support + 2 * tolerence, 1], true);
+                }
+
+                translate([0, (nanopi_z - nanopi_mount_z) / 2])
+                circle(nanopi_screw / 2 + tolerence);
+            }
+            *translate([0, (nanopi_z - nanopi_mount_z) / 4])
+            square([nanopi_mount_y, 2 * nanopi_screw_support], true);
+        }
+
+        for(i = [-1:2:1])
+        translate([i * nanopi_mount_y / 2, (nanopi_z - nanopi_mount_z) / 2, 0])
+        {
+            translate([0, 0, -1])
+            fillet_extrude($rack_fillet, rack_thickness / 2 + 1)
+            circle(nanopi_nut / 2 + tolerence, $fn=6);
+
+            rotate(180, [1, 0, 0])
+            translate([0, 0, -$rack_fillet / 2])
+            difference()
+            {
+                linear_extrude(2 * $rack_fillet)
+                circle(nanopi_nut / 2 + tolerence + $rack_fillet, $fn=6);
+                rotate_extrude(angle=360, $fn=6)
+                translate([nanopi_nut / 2 + tolerence + $rack_fillet, 0])
+                circle($rack_fillet, $fn=48);
+            }
+        }
+    }
 }
 
 // Need to implement Top Fan Rack
@@ -326,6 +399,15 @@ module topfan_rack()
                     circle(fan_mount_small_r / 2);
                 }
             }
+
+            for(i = [0:1])
+            translate([0, i * nanopi_mount_y - nanopi_y + inner_y / 2])
+            square([inner_x, nanopi_nut + 2 * nanopi_screw_support + 2 * tolerence], true);
+
+            for(i = [0:nanopi_count - 1])
+            translate([-inner_x / 2 + (i + 1) * pi_offset + i * (nanopi_x[0] + nanopi_x[1]) + nanopi_x[0] + rack_thickness / 2, 
+                       nanopi_mount_y / 2 - nanopi_y + inner_y / 2])
+            square([rack_thickness, nanopi_mount_y], true);
         }
 
         for(i = [-1:2:1])
@@ -356,6 +438,11 @@ module topfan_rack()
             }
         }
     }
+    for(i = [0:nanopi_count - 1])
+    translate([-inner_x / 2 + (i + 1) * pi_offset + i * (nanopi_x[0] + nanopi_x[1]) + nanopi_x[0], 
+               nanopi_mount_y / 2 - nanopi_y + inner_y / 2, 0])
+    rotate(180, [1, 0, 0])
+    nanopi_mount();
 }
 
 if (which_model == "viewport")
@@ -370,7 +457,7 @@ if (which_model == "viewport")
 
     echo(str("External Dimensions Are = ", [outer_x, outer_y, outer_z]));
 
-    body();
+    *body();
     translate([0, -outer_y / 2 + wall_thickness / 2, wall_thickness + tolerence])
     *door();
     translate([0, 0, wall_thickness + tolerence])
@@ -403,10 +490,10 @@ else
 
     else if (which_model == "door")
     {
-        translate([outer_z / 2, 0, 0])
-        rotate(-90, [0, 1, 0])
+        translate([-outer_z / 2, 0, wall_thickness / 2])
+        rotate(90, [0, 1, 0])
         rotate(90, [0, 0, 1])
-        door();;
+        door();
     }
 
     else if (which_model == "network_rack")
@@ -426,6 +513,8 @@ else
 
     else if (which_model == "nanopi_mount")
     {
+        rotate(-90, [1, 0, 0])
+        rotate(-90, [0, 0, 1])
         nanopi_mount();
     }
 
