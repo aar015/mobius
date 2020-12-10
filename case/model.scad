@@ -4,9 +4,9 @@ viewport_fn = 12;
 tolerence = 0.2;
 
 /*[Body]*/
-inner_x = 158.4;
-inner_y = 158.4;
-wall_thickness = 4.0;
+inner_x = 142.0;
+inner_y = 145.6;
+wall_thickness = 3.2;
 
 /*[Logo]*/
 logo_outer = 45;
@@ -15,19 +15,21 @@ logo_stroke = 1.6;
 logo_thickness = 1.2;
 
 /*[Rack]*/
-rack_thickness = 3.6;
+rack_thickness = 3.2;
 rack_support = 1.6;
 
 /*[Retainer]*/
-retainer_thickness = 2.4;
-retainer_protrusion = 2.4;
+retainer_thickness = 1.6;
+retainer_protrusion = 1.6;
 
 /*[Power Block]*/
 power_x = 69.7;
 power_y = 101.4;
+power_z = 30;
 power_lip = 4.8;
 
 /*[2_5 Inch Drive]*/
+drive_z = 20;
 
 /*[Network Plug]*/
 plug_x = 23.75;
@@ -38,20 +40,25 @@ plug_lip = 4.8;
 /*[Network Switch]*/
 switch_x = 100.4;
 switch_y = 98.4;
+switch_z = 25.2;
 switch_lip = 6.8;
 
 /*[Portable SSD]*/
 ssd_x = 9.2;
 ssd_y = 101.4;
+ssd_z = 30;
 ssd_lip = 1.2;
 
 /*[60mm Fan]*/
+fan_z = 71.6;
 fan_outer = 60;
 fan_inner = 50;
 fan_mount_large = 10.4;
 fan_mount_small = 5.6;
 fan_mount_thickness = 2.0;
 fan_mount_support = 1.2;
+fan_honeycomb_x = 140;
+fan_honeycomb_z = 60;
 fan_honeycomb_fill = 10;
 
 /*[Honeycomb]*/
@@ -60,7 +67,7 @@ honeycomb_stroke = 1.2;
 /*[Neo3]*/
 neo3_x = [15, 7];
 neo3_y = 92.0;
-neo3_z = 95.8;
+neo3_z = 50.0;
 neo3_count = 4;
 neo3_mount_y = 42;
 neo3_mount_z = 42;
@@ -69,24 +76,28 @@ neo3_screw = 3;
 neo3_nut = 6.2;
 
 /*[Rack One]*/
-one_z = 0.2;
+one_z = 0;
 
 /*[Rack Two]*/
-two_z = one_z;
+two_z = one_z + rack_thickness + max(power_z, drive_z) + 2 * tolerence;
 
 /*[Rack Three]*/
+three_z = two_z + rack_thickness + max(plug_z, switch_z, ssd_z) + 2 * tolerence;
 
 /*[Rack Four]*/
+four_z = three_z + (fan_z - neo3_z) / 2;
 
 /*[Rack Five]*/
+five_z = four_z + rack_thickness + neo3_z + 2 * tolerence;
 
 /*[Rack Six]*/
+six_z = three_z + rack_thickness + fan_z + 2 * tolerence;
 
 /*[Calculated]*/
-inner_z = 100;
+inner_z = six_z + rack_thickness;
 outer_x = inner_x + 2 * wall_thickness + 2 * retainer_protrusion + 4 * tolerence;
 outer_y = inner_y + 2 * wall_thickness + 2 * tolerence;
-outer_z = inner_z + 2 * wall_thickness;
+outer_z = inner_z + 2 * wall_thickness + 2 * tolerence;
 
 /*[Hidden]*/
 which_model = "viewport";
@@ -188,6 +199,15 @@ module honeycomb(size, fill, stroke=honeycomb_stroke)
     }
 }
 
+module retainer()
+{
+    translate([0, 0, -retainer_thickness / 2 - tolerence])
+    for(i = [-1:2:1])
+    for(j = [0:1])
+    translate([i * (outer_x / 2 - wall_thickness), tolerence, j * (rack_thickness + retainer_thickness + 2 * tolerence)])
+    cube([2 * (retainer_protrusion + tolerence), inner_y + tolerence, retainer_thickness], true);
+}
+
 module body()
 {
     difference()
@@ -198,7 +218,23 @@ module body()
         linear_extrude(outer_z)
         offset(tolerence)
         dovetail();
+
+        
+        translate([0, outer_y / 2 + 0.1, wall_thickness + tolerence + rack_thickness + three_z + fan_z / 2])
+        rotate(90, [1, 0, 0])
+        //rotate(90, [0, 0, 1])
+        honeycomb([fan_honeycomb_x, fan_honeycomb_z, wall_thickness + 0.2], fan_honeycomb_fill);
     }
+
+    for(z = [one_z, two_z, three_z, four_z, five_z, six_z])
+    translate([0, 0, z + wall_thickness + tolerence])
+    retainer();
+}
+
+module rack()
+{
+    translate([0, 0, rack_thickness / 2])
+    cube([inner_x + 2 * retainer_protrusion + 2 * tolerence, inner_y, rack_thickness], true);
 }
 
 module fan_mount()
@@ -242,8 +278,10 @@ if (which_model == "viewport")
     echo(str("External Dimensions Are = ", [outer_x, outer_y, outer_z]));
 
     body();
-    translate([0, -outer_y / 2, wall_thickness + tolerence])
+    *translate([0, -outer_y / 2, wall_thickness + tolerence])
     door();
+    *translate([0, 0, wall_thickness + tolerence + one_z])
+    rack();
 }
 else
 {
@@ -259,9 +297,8 @@ else
 
     else if (which_model == "door")
     {
-        translate([-outer_z / 2, 0, wall_thickness / 2])
-        rotate(90, [0, 1, 0])
-        rotate(90, [0, 0, 1])
+        translate([0, -(outer_z - wall_thickness - tolerence) / 2, wall_thickness])
+        rotate(-90, [1, 0, 0])
         door();
     }
 }
