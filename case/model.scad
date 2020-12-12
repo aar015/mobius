@@ -15,7 +15,7 @@ logo_inner = 20;
 logo_stroke = 2.4;
 logo_thickness = -wall_thickness - 0.1;
 logo_honeycomb = true;
-logo_honeycomb_fill = 25;
+logo_honeycomb_fill = 24;
 
 /*[Rack]*/
 rack_y = 100;
@@ -55,7 +55,7 @@ ssd_z = 30;
 ssd_lip = 1.2;
 
 /*[60mm Fan]*/
-fan_y = retainer_protrusion + rack_support + 2 * tolerence;
+fan_y = tolerence + rack_support;
 fan_z = 71.6;
 fan_outer = 60;
 fan_inner = 50;
@@ -66,14 +66,14 @@ fan_mount_small = 5.2;
 fan_mount_support = 1.2;
 fan_honeycomb_x = inner_x;
 fan_honeycomb_z = fan_z;
-fan_honeycomb_fill = 11;
+fan_honeycomb_fill = 12;
 
 /*[Honeycomb]*/
 honeycomb_stroke = 1.2;
 
 /*[pi]*/
 pi_x = [16, 8];
-pi_y = 100.0;
+pi_y = rack_y;
 pi_z = fan_z - 2 * (rack_thickness + retainer_thickness + 2 * tolerence);
 pi_count = 4;
 pi_mount_y = 42;
@@ -110,6 +110,8 @@ fan_mount_x = (fan_inner + fan_mount_large + 2 * tolerence + 2 * fan_mount_suppo
 fan_offset = (inner_x - 2 * fan_mount_x) / 3;
 pi_offset = (inner_x - pi_count * (pi_x[0] + pi_x[1])) / (pi_count + 1);
 top_z = outer_z - wall_thickness - (six_z + rack_thickness) - 2 * tolerence;
+pi_mount_r = pi_nut / 2 + pi_mount_support + tolerence;
+
 assert(top_z > -101 * tolerence / 100);
 assert(fan_offset > -0.01);
 assert(pi_offset > -0.01);
@@ -258,12 +260,23 @@ module rack()
     {
         hull()
         for(i = [-1:2:1])
-        for(j = [-1:2:1])
-        translate([i * inner_x / 2, j * (inner_y / 2 - retainer_protrusion - tolerence), 0])
+        for(j = [0:1])
+        translate([i * inner_x / 2, inner_y / 2 - j * rack_y + (2 * j - 1) * (retainer_protrusion + tolerence), 0])
         cylinder(rack_thickness, r=retainer_protrusion + tolerence);
 
-        translate([0, 0, rack_thickness / 2 - 0.05])
-        cube([inner_x - 2 * rack_support, inner_y - 2 * (retainer_protrusion + tolerence + rack_support), rack_thickness + 0.2], true);
+        translate([0, (inner_y - rack_y) / 2, rack_thickness / 2])
+        cube([inner_x - 2 * rack_support, rack_y - 2 * (retainer_protrusion + tolerence + rack_support), rack_thickness + 0.2], true);
+    }
+
+    for(i = [0:1])
+    translate([inner_x / 2 - retainer_protrusion - i * (inner_x + tolerence), 0, 0])
+    hull()
+    {
+        translate([0, inner_y / 2 - rack_y, 0])
+        cube([tolerence + retainer_protrusion + rack_support, tolerence + retainer_protrusion + rack_support, rack_thickness]);
+
+        translate([0, -inner_y / 2, 0])
+        cube([tolerence + retainer_protrusion + rack_support, tolerence + retainer_protrusion + rack_support, rack_thickness]);
     }
 }
 
@@ -273,26 +286,6 @@ module rack_one()
 }
 
 module rack_two()
-{
-    rack();
-}
-
-module rack_three()
-{
-    rack();
-}
-
-module rack_four()
-{
-    rack();
-}
-
-module rack_five()
-{
-    rack();
-}
-
-module rack_six()
 {
     rack();
 }
@@ -330,9 +323,31 @@ module fan_mount()
     }
 }
 
+module rack_three()
+{
+    difference()
+    {
+        union()
+        {
+            rack();
+
+            fill_y = 2 * (tolerence + rack_support) + fan_mount_thickness;
+            translate([0, inner_y / 2 - fill_y / 2 - fan_y + tolerence + rack_support, rack_thickness / 2])
+            cube([inner_x, fill_y, rack_thickness], true);
+        }
+
+        r = fan_mount_large / 2 + fan_mount_support + tolerence;
+        for(i = [0:1])
+        for(j = [0:1])
+        translate([-inner_x / 2 + r + fan_offset + i * (fan_mount_x + fan_offset) + j * fan_inner, 
+                   inner_y / 2 - fan_mount_thickness / 2 - fan_y, 3 * rack_thickness / 4])
+        cube([2 * (r + tolerence), fan_mount_thickness + 2 * tolerence, rack_thickness / 2 + 2 * tolerence], true);
+    }
+}
+
 module pi_mount()
 {
-    r = pi_nut / 2 + pi_mount_support + tolerence;
+    r = pi_mount_r;
 
     for(i = [0:1])
     for(j = [-1:2:1])
@@ -371,6 +386,57 @@ module pi_mount()
     *cube([pi_x[0] + pi_x[1], pi_mount_y, pi_mount_z], true);
 }
 
+module pi_rack() 
+{
+    for(i = [0:1])
+    translate([inner_x / 2 - retainer_protrusion - i * (inner_x + tolerence), -inner_y / 2, 0])
+    cube([tolerence + retainer_protrusion + rack_support, inner_y, rack_thickness]);
+
+    for(i = [0:1])
+    translate([-inner_x / 2, inner_y / 2 - pi_y + pi_mount_r - tolerence - rack_support + i * pi_mount_y, 0])
+    cube([inner_x, 2 * (pi_mount_r + tolerence + rack_support), rack_thickness]);
+
+    translate([0, (inner_y + tolerence + retainer_protrusion + rack_support) / 2 - pi_y, rack_thickness / 2])
+    cube([inner_x, tolerence + retainer_protrusion + rack_support, rack_thickness], true);
+}
+
+module rack_four()
+{
+    difference()
+    {
+        pi_rack();
+
+        for(i = [0:pi_count - 1])
+        for(j = [0:1])
+        translate([-inner_x / 2 + pi_offset + pi_x[0] - tolerence + i * (pi_offset + pi_x[0] + pi_x[1]),
+                   inner_y / 2 - pi_y + pi_mount_r - tolerence + j * pi_mount_y, 
+                   rack_thickness / 2 - tolerence])
+        cube([pi_mount_thickness + 2 * tolerence, 2 * (pi_mount_r + tolerence), rack_thickness]);
+    }
+}
+
+module rack_five()
+{
+    difference()
+    {
+        pi_rack();
+
+        for(i = [0:pi_count - 1])
+        for(j = [0:1])
+        translate([-inner_x / 2 + pi_offset + pi_x[0] - tolerence + i * (pi_offset + pi_x[0] + pi_x[1]),
+                   inner_y / 2 - pi_y + pi_mount_r - tolerence + j * pi_mount_y, 
+                   -rack_thickness / 2 + tolerence])
+        cube([pi_mount_thickness + 2 * tolerence, 2 * (pi_mount_r + tolerence), rack_thickness]);
+    }
+}
+
+module rack_six()
+{
+    rack_three();
+}
+
+intersection()
+{
 if (which_model == "viewport")
 {
     $fn = viewport_fn;
@@ -379,7 +445,7 @@ if (which_model == "viewport")
     echo(str("Top Cuby Height = ", top_z));
 
     body();
-    translate([0, -outer_y / 2, wall_thickness + tolerence])
+    *translate([0, -outer_y / 2, wall_thickness + tolerence])
     door();
     translate([0, 0, one_z])
     rack_one();
@@ -391,7 +457,8 @@ if (which_model == "viewport")
     rack_four();
     translate([0, 0, five_z])
     rack_five();
-    translate([0, 0, six_z])
+    translate([0, 0, six_z + rack_thickness])
+    rotate(180, [0, 1, 0])
     rack_six();
 
     for(i = [0:1])
@@ -425,4 +492,7 @@ else
         rotate(-90, [1, 0, 0])
         door();
     }
+}
+
+*cube([90, 500, 500], true);
 }
