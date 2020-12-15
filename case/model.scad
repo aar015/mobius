@@ -4,9 +4,9 @@ viewport_fn = 24;
 tolerence = 0.2;
 
 /*[Body]*/
-inner_x = 143.6;
-inner_y = 156.4;
-inner_z = 138.8;
+inner_x = 143.2;
+inner_y = 158.8;
+inner_z = 134.8;
 wall_thickness = 2.4;
 
 /*[Logo]*/
@@ -18,9 +18,10 @@ logo_honeycomb = true;
 logo_honeycomb_fill = 24;
 
 /*[Rack]*/
-rack_y = 100;
+rack_y = 101.4;
 rack_thickness = 2.4;
 rack_support = 1.6;
+rack_wall_height = 0.6;
 
 /*[Retainer]*/
 retainer_thickness = 1.6;
@@ -31,32 +32,38 @@ power_x = 69.6;
 power_y = 101.4;
 power_z = 30;
 power_lip = 4.8;
-
-/*[2_5 Inch Drive]*/
-drive_x = 69.8;
-drive_z = 20;
-
-/*[Network Plug]*/
-plug_x = 23.75;
-plug_y = 43.2;
-plug_z = 26.4;
-plug_lip = 4.8;
-
-/*[Network Switch]*/
-switch_x = 100.4;
-switch_y = 98.4;
-switch_z = 25.2;
-switch_lip = 6.8;
+power_leg = 15.2;
 
 /*[Portable SSD]*/
 ssd_x = 9.2;
 ssd_y = 101.4;
 ssd_z = 30;
 ssd_lip = 1.2;
+ssd_leg = 15.2;
+ssd_count = 4;
+
+/*[2_5 Inch Drive]*/
+drive_x = 69.6;
+drive_y = 100.0;
+drive_z = 20;
+
+/*[Network Plug]*/
+plug_x = 23.6;
+plug_y = 43.2;
+plug_z = 26.4;
+plug_lip = 4.8;
+plug_leg = 15.2;
+
+/*[Network Switch]*/
+switch_x = 100.4;
+switch_y = 98.4;
+switch_z = 26.4;
+switch_lip = 6.8;
+switch_leg = 15.2;
 
 /*[60mm Fan]*/
 fan_y = tolerence + rack_support;
-fan_z = 71.6;
+fan_z = 67.6;
 fan_outer = 60;
 fan_inner = 50;
 fan_mount_thickness = 3.6;
@@ -102,7 +109,6 @@ five_z = four_z + rack_thickness + pi_z + 2 * tolerence;
 six_z = three_z + rack_thickness + fan_z + 2 * tolerence;
 
 /*[Calculated]*/
-//inner_z = six_z - tolerence;
 outer_x = inner_x + 2 * wall_thickness + 2 * retainer_protrusion + 4 * tolerence;
 outer_y = inner_y + 2 * wall_thickness + 2 * tolerence;
 outer_z = inner_z + 2 * wall_thickness + 2 * tolerence;
@@ -111,13 +117,18 @@ fan_offset = (inner_x - 2 * fan_mount_x) / 3;
 pi_offset = (inner_x - pi_count * (pi_x[0] + pi_x[1])) / (pi_count + 1);
 top_z = outer_z - wall_thickness - (six_z + rack_thickness) - 2 * tolerence;
 pi_mount_r = pi_nut / 2 + pi_mount_support + tolerence;
+one_total_x = 2 * rack_support + 3 * tolerence + power_x + drive_x;
+two_total_x = 3 * rack_support + 4 * tolerence + plug_x + switch_x;
+ssd_total_x = (ssd_count + 1) * rack_support + ssd_count * (ssd_x + 2 * tolerence);
+ssd_offset = (inner_x - 2 * rack_support - 2 * tolerence - power_x - ssd_total_x) / 2;
 
+/*[Viewport]*/
+which_model = "viewport"; //["viewport", "body", "door", "rack_one_ssd", "rack_one_drive", "rack_two", "rack_three_six", "rack_four", "rack_five", "fan_mount", "pi_mount"]
+
+/*[Assertions]*/
 assert(top_z > -101 * tolerence / 100);
 assert(fan_offset > -0.01);
 assert(pi_offset > -0.01);
-
-/*[Hidden]*/
-which_model = "viewport";
 
 module walls()
 {
@@ -185,7 +196,7 @@ module door()
         }
 
         if(logo_thickness < 0)
-        translate([0, -logo_thickness, outer_z / 2])
+        translate([0, -logo_thickness, outer_z / 2 - 5.2])
         rotate(90, [1, 0, 0])
         intersection()
         {
@@ -283,11 +294,178 @@ module rack()
 module rack_one()
 {
     rack();
+
+    translate([0, inner_y / 2 - power_y])
+    {
+        translate([-one_total_x / 2, 0, 0])
+        {
+            cube([2 * rack_support + tolerence, power_y, rack_thickness]);
+
+            translate([0, -tolerence, 0])
+            cube([rack_support, power_leg + tolerence, rack_thickness + rack_wall_height * power_z]);
+
+            translate([0, power_y - power_leg, 0])
+            cube([rack_support, power_leg, rack_thickness + rack_wall_height * power_z]);
+        }
+
+        translate([-one_total_x / 2 + power_x + tolerence, 0, 0])
+        {
+            cube([2 * rack_support + tolerence, power_y, rack_thickness]);
+
+            translate([rack_support + tolerence, -tolerence, 0])
+            cube([rack_support, power_leg + tolerence, rack_thickness + rack_wall_height * power_z]);
+
+            translate([rack_support + tolerence, power_y - power_leg, 0])
+            cube([rack_support, power_leg, rack_thickness + rack_wall_height * power_z]);
+        }
+
+        translate([-inner_x / 2, -rack_support - tolerence, 0])
+        cube([inner_x, 2 * rack_support + tolerence, rack_thickness]);
+
+        for(i = [0:1])
+        translate([-one_total_x / 2 + i * (power_x - power_lip + tolerence + rack_support), -rack_support - tolerence, 0])
+        cube([rack_support + tolerence + power_lip, rack_support, rack_thickness + rack_wall_height * power_z]);
+    }
+
+    *#translate([-one_total_x / 2 + rack_support + tolerence, inner_y / 2 - power_y, rack_thickness + tolerence])
+    cube([power_x, power_y, power_z]);
+}
+
+module rack_one_ssd()
+{
+    rack_one();
+
+    translate([0, inner_y / 2 - ssd_y])
+    {
+        translate([-one_total_x / 2 + power_x + rack_support + 2 * tolerence + ssd_offset, 0, 0])
+        {
+            cube([2 * rack_support + tolerence, ssd_y, rack_thickness]);
+
+            translate([0, -tolerence, 0])
+            cube([rack_support, ssd_leg + tolerence, rack_thickness + rack_wall_height * ssd_z]);
+
+            translate([0, ssd_y - ssd_leg, 0])
+            cube([rack_support, ssd_leg, rack_thickness + rack_wall_height * ssd_z]);
+        }
+
+        for(i = [1:ssd_count - 1])
+        translate([-one_total_x / 2 + power_x + tolerence + ssd_offset + i * (ssd_x + rack_support + 2 * tolerence), 0, 0])
+        {
+            cube([3 * rack_support + 2 * tolerence, ssd_y, rack_thickness]);
+
+            translate([rack_support + tolerence, -tolerence, 0])
+            cube([rack_support, ssd_leg + tolerence, rack_thickness + rack_wall_height * ssd_z]);
+
+            translate([rack_support + tolerence, ssd_y - ssd_leg, 0])
+            cube([rack_support, ssd_leg, rack_thickness + rack_wall_height * ssd_z]);
+        }
+
+        translate([-one_total_x / 2 + power_x + tolerence + ssd_offset + ssd_count * (ssd_x + rack_support + 2 * tolerence), 0, 0])
+        {
+            cube([2 * rack_support + tolerence, ssd_y, rack_thickness]);
+
+            translate([rack_support + tolerence, -tolerence, 0])
+            cube([rack_support, ssd_leg + tolerence, rack_thickness + rack_wall_height * ssd_z]);
+
+            translate([rack_support + tolerence, ssd_y - ssd_leg, 0])
+            cube([rack_support, ssd_leg, rack_thickness + rack_wall_height * ssd_z]);
+        }
+
+        translate([-inner_x / 2, -rack_support - tolerence, 0])
+        cube([inner_x, 2 * rack_support + tolerence, rack_thickness]);
+
+        translate([-one_total_x / 2 + power_x + rack_support + 2 * tolerence + ssd_offset, -rack_support - tolerence, 0])
+        cube([rack_support + tolerence + ssd_lip, rack_support, rack_thickness + rack_wall_height * ssd_z]);
+
+        for(i = [1:ssd_count - 1])
+        translate([-one_total_x / 2 + power_x + tolerence + rack_support - ssd_lip + ssd_offset + i * (rack_support + 2 * tolerence + ssd_x), -rack_support - tolerence, 0])
+        cube([rack_support + 2 * tolerence + 2 * ssd_lip, rack_support, rack_thickness + rack_wall_height * ssd_z]);
+
+        translate([-one_total_x / 2 + power_x + tolerence + rack_support - ssd_lip + ssd_offset + ssd_count * (rack_support + 2 * tolerence + ssd_x), -rack_support - tolerence, 0])
+        cube([rack_support + tolerence + ssd_lip, rack_support, rack_thickness + rack_wall_height * ssd_z]);
+    }
+
+    *#for(i = [1:ssd_count])
+    translate([-one_total_x / 2 + (i + 1) * rack_support + (2 * i + 1) * tolerence + power_x + (i - 1) * ssd_x + ssd_offset,
+               inner_y / 2 - ssd_y, rack_thickness + tolerence])
+    cube([ssd_x, ssd_y, ssd_z]);
+}
+
+module rack_one_drive()
+{
+    rack_one();
+
+    *#translate([-one_total_x / 2 + 2 * rack_support + 3 * tolerence + power_x, inner_y / 2 - drive_y, rack_thickness + tolerence])
+    cube([drive_x, drive_y, drive_z]);
 }
 
 module rack_two()
 {
     rack();
+
+    translate([0, inner_y / 2 - plug_y])
+    {
+        translate([-two_total_x / 2, 0, 0])
+        {
+            cube([2 * rack_support + tolerence, plug_y, rack_thickness]);
+
+            translate([0, -tolerence, 0])
+            cube([rack_support, plug_leg + tolerence, rack_thickness + rack_wall_height * plug_z]);
+
+            translate([0, plug_y - plug_leg, 0])
+            cube([rack_support, plug_leg, rack_thickness + rack_wall_height * plug_z]);
+        }
+
+        translate([-two_total_x / 2 + plug_x + tolerence, 0, 0])
+        {
+            cube([2 * rack_support + tolerence, plug_y, rack_thickness]);
+
+            translate([rack_support + tolerence, -tolerence, 0])
+            cube([rack_support, plug_leg + tolerence, rack_thickness + rack_wall_height * plug_z]);
+
+            translate([rack_support + tolerence, plug_y - plug_leg, 0])
+            cube([rack_support, plug_leg, rack_thickness + rack_wall_height * plug_z]);
+        }
+
+        translate([-inner_x / 2, -rack_support - tolerence, 0])
+        cube([inner_x, 2 * rack_support + tolerence, rack_thickness]);
+
+        for(i = [0:1])
+        translate([-two_total_x / 2 + i * (plug_x - plug_lip + tolerence + rack_support), -rack_support - tolerence, 0])
+        cube([rack_support + tolerence + plug_lip, rack_support, rack_thickness + rack_wall_height * plug_z]);
+    }
+
+    translate([plug_x + 2 * tolerence + rack_support, inner_y / 2 - switch_y])
+    {
+        translate([-two_total_x / 2, 0, 0])
+        {
+            cube([2 * rack_support + tolerence, switch_y, rack_thickness]);
+
+            translate([0, -tolerence, 0])
+            cube([rack_support, switch_leg + tolerence, rack_thickness + rack_wall_height * switch_z]);
+
+            translate([0, switch_y - switch_leg, 0])
+            cube([rack_support, switch_leg, rack_thickness + rack_wall_height * switch_z]);
+        }
+
+        translate([-two_total_x / 2 + switch_x + tolerence, 0, 0])
+        {
+            cube([2 * rack_support + tolerence, switch_y, rack_thickness]);
+
+            translate([rack_support + tolerence, -tolerence, 0])
+            cube([rack_support, switch_leg + tolerence, rack_thickness + rack_wall_height * switch_z]);
+
+            translate([rack_support + tolerence, switch_y - switch_leg, 0])
+            cube([rack_support, switch_leg, rack_thickness + rack_wall_height * switch_z]);
+        }
+
+        translate([-inner_x / 2 - plug_x - 2 * tolerence - rack_support, -rack_support - tolerence, 0])
+        cube([inner_x, 2 * rack_support + tolerence, rack_thickness]);
+
+        for(i = [0:1])
+        translate([-two_total_x / 2 + i * (switch_x - switch_lip + tolerence + rack_support), -rack_support - tolerence, 0])
+        cube([rack_support + tolerence + switch_lip, rack_support, rack_thickness + rack_wall_height * switch_z]);
+    }
 }
 
 module fan_mount()
@@ -323,7 +501,7 @@ module fan_mount()
     }
 }
 
-module rack_three()
+module rack_three_six()
 {
     difference()
     {
@@ -430,13 +608,6 @@ module rack_five()
     }
 }
 
-module rack_six()
-{
-    rack_three();
-}
-
-intersection()
-{
 if (which_model == "viewport")
 {
     $fn = viewport_fn;
@@ -445,21 +616,28 @@ if (which_model == "viewport")
     echo(str("Top Cuby Height = ", top_z));
 
     body();
-    *translate([0, -outer_y / 2, wall_thickness + tolerence])
+
+    translate([0, -outer_y / 2, wall_thickness + tolerence])
     door();
+
     translate([0, 0, one_z])
-    rack_one();
+    rack_one_ssd();
+
     translate([0, 0, two_z])
     rack_two();
+
     translate([0, 0, three_z])
-    rack_three();
+    rack_three_six();
+
     translate([0, 0, four_z])
     rack_four();
+
     translate([0, 0, five_z])
     rack_five();
+
     translate([0, 0, six_z + rack_thickness])
     rotate(180, [0, 1, 0])
-    rack_six();
+    rack_three_six();
 
     for(i = [0:1])
     translate([fan_mount_x / 2 - inner_x / 2 + fan_offset + i * (fan_mount_x + fan_offset), 
@@ -479,20 +657,42 @@ else
     $fn = render_fn;
 
     if (which_model == "body")
-    {
-        translate([outer_z / 2, 0, outer_y / 2])
-        rotate(-90, [0, 1, 0])
-        rotate(90, [0, 0, 1])
-        body();
-    }
+    rotate(90, [0, 0, 1])
+    translate([outer_z / 2, 0, outer_y / 2])
+    rotate(-90, [0, 1, 0])
+    rotate(90, [0, 0, 1])
+    body();
 
     else if (which_model == "door")
-    {
-        translate([0, -(outer_z - wall_thickness - tolerence) / 2, wall_thickness])
-        rotate(-90, [1, 0, 0])
-        door();
-    }
-}
+    translate([0, -(outer_z - wall_thickness - tolerence) / 2, wall_thickness])
+    rotate(-90, [1, 0, 0])
+    door();
 
-*cube([90, 500, 500], true);
+    else if (which_model == "rack_one_ssd")
+    rack_one_ssd();
+
+    else if (which_model == "rack_one_drive")
+    rack_one_drive();
+
+    else if (which_model == "rack_two")
+    rack_two();
+
+    else if (which_model == "rack_three_six")
+    rack_three_six();
+
+    else if (which_model == "rack_four")
+    rack_four();
+
+    else if (which_model == "rack_five")
+    translate([0, 0, rack_thickness])
+    rotate(180, [0, 1, 0])
+    rack_five();
+
+    else if (which_model == "fan_mount")
+    fan_mount();
+
+    else if (which_model == "pi_mount")
+    translate([0, 0, -(pi_x[0] - pi_x[1]) / 2])
+    rotate(-90, [0, 1, 0])
+    pi_mount();
 }

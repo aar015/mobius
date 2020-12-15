@@ -11,9 +11,13 @@ render()
     model.scad
 }
 
-render "network_rack" & \
-render "power_rack" & \
-render "nanopi_rack" & \
-render "topfan_rack" & \
+render "body" & \
 render "door" & \
-render "body"
+render "rack_one_ssd" & \
+render "rack_one_drive" & \
+render "rack_two" & \
+render "rack_three_six" & \
+render "rack_four" & \
+render "rack_five" & \
+render "fan_mount" & \
+render "pi_mount"
