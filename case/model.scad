@@ -94,7 +94,7 @@ pi_count = 4;
 pi_mount_y = 42;
 pi_mount_z = 42;
 pi_mount_thickness = 4.4;
-pi_mount_support = 1.2;
+pi_mount_support = 0.8;
 pi_screw = 3;
 pi_nut = 6.2;
 
@@ -566,7 +566,7 @@ module pi_mount()
             translate([pi_mount_thickness / 2, j * 3 * r / 3, 0])
             cube([pi_mount_thickness, 2 * r, 2 * r], true);
 
-            translate([pi_mount_thickness / 2, -j * pi_mount_y / 4, (pi_z - pi_mount_z) / 4])
+            translate([pi_mount_thickness / 2, -j * pi_mount_y / 4, 3 * r / 2])
             cube([pi_mount_thickness, pi_mount_y / 2, r], true);
 
             translate([pi_mount_thickness / 2, 3 * j * r / 2, -pi_mount_z / 4])
@@ -637,7 +637,7 @@ if (which_model == "viewport")
     echo(str("External Dimensions = ", [outer_x, outer_y, outer_z]));
     echo(str("Top Cuby Height = ", top_z));
 
-    body();
+    *body();
 
     translate([0, -outer_y / 2, wall_thickness + tolerence])
     door();
