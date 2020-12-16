@@ -4,38 +4,38 @@ viewport_fn = 64;
 tolerence = 0.2;
 
 /*[Body]*/
-inner_x = 143.2;
-inner_y = 158.8;
-inner_z = 134.8;
-wall_thickness = 2.4;
+inner_x = 162.0;
+inner_y = 167.2;
+inner_z = 167.2;
+wall_thickness = 3.6;
 
 /*[Logo]*/
-logo_outer = 80;
-logo_inner = 20;
+logo_outer = 115.2;
+logo_inner = 28.8;
 logo_stroke = 2.4;
 logo_thickness = -wall_thickness - 0.1;
 logo_honeycomb = true;
-logo_honeycomb_fill = 26;
-logo_offset = -5.2;
+logo_honeycomb_fill = 34;
+logo_offset = -6.0;
 
 /*[Rack]*/
-rack_y = 101.4;
-rack_thickness = 2.4;
-rack_support = 1.6;
+rack_support = 2.4;
+rack_y = 101.4 + tolerence + rack_support;
+rack_thickness = 3.6;
 rack_wall_height = 0.6;
 
 /*[Retainer]*/
-retainer_thickness = 1.6;
-retainer_protrusion = 1.6;
+retainer_thickness = 2.4;
+retainer_protrusion = 2.4;
 
 /*[Power Block]*/
 power_x = 69.6;
 power_y = 101.4;
 power_z = 30;
 power_lip = 4.8;
-power_leg = 15.2;
-power_hole_x = 26.0;
-power_hole_z = 14.0;
+power_leg = 15.6;
+power_hole_x = 26.4;
+power_hole_z = 14.4;
 power_hole_z_offset = -2.0;
 
 /*[Portable SSD]*/
@@ -43,63 +43,66 @@ ssd_x = 9.2;
 ssd_y = 101.4;
 ssd_z = 30;
 ssd_lip = 1.2;
-ssd_leg = 15.2;
+ssd_leg = 15.6;
 ssd_count = 4;
 
 /*[2_5 Inch Drive]*/
 drive_x = 69.6;
 drive_y = 100.0;
-drive_z = 20;
+drive_z = 21.6;
 
 /*[Network Plug]*/
 plug_x = 23.6;
 plug_y = 43.2;
 plug_z = 26.4;
 plug_lip = 4.8;
-plug_leg = 15.2;
-plug_hole_x = 16;
-plug_hole_z = 16;
+plug_leg = 15.6;
+plug_hole_x = 16.8;
+plug_hole_z = 16.8;
 
 /*[Network Switch]*/
 switch_x = 100.4;
 switch_y = 98.8;
 switch_z = 25.6;
 switch_lip = 6.8;
-switch_leg = 15.2;
+switch_leg = 15.6;
 switch_hole_x = 12.0;
-switch_hole_z = 14.0;
+switch_hole_z = 14.4;
 switch_hole_x_offset = -30.0;
 
 /*[60mm Fan]*/
 fan_y = tolerence + rack_support;
-fan_z = 65.6;
+fan_z = 69.6;
 fan_inner = 50;
-fan_mount_thickness = 4.4;
+fan_mount_thickness = 3.6;
 fan_mount_small_thickness = 2.0;
 fan_mount_large = 10.0;
 fan_mount_small = 5.2;
-fan_mount_support = 0.8;
+fan_mount_support = 1.2;
 fan_honeycomb_x = inner_x;
 fan_honeycomb_z = 62.4;
-fan_honeycomb_fill = 11;
+fan_honeycomb_fill = 10;
 
 /*[Honeycomb]*/
 honeycomb_stroke = 1.2;
 
 /*[pi]*/
-pi_x = [16, 8];
+pi_x = [16.8, 8.4];
 pi_y = rack_y;
 pi_z = fan_z - 2 * (rack_thickness + retainer_thickness + 2 * tolerence);
 pi_count = 4;
 pi_mount_y = 42;
 pi_mount_z = 42;
-pi_mount_thickness = 4.4;
-pi_mount_support = 0.4;
+pi_mount_thickness = 3.6;
+pi_mount_support = 0.6;
 pi_screw = 3;
 pi_nut = 6.2;
 
+/*[Rack Zero]*/
+zero_z = wall_thickness + tolerence;
+
 /*[Rack One]*/
-one_z = wall_thickness + tolerence;
+one_z = zero_z + rack_thickness + drive_z + 2 * tolerence;
 
 /*[Rack Two]*/
 two_z = one_z + rack_thickness + max(power_z, drive_z, ssd_z) + 2 * tolerence;
@@ -282,7 +285,7 @@ module body()
         cube([switch_hole_x, wall_thickness + 1, switch_hole_z], true);
     }
 
-    for(z = [one_z, two_z, three_z, four_z, five_z, six_z])
+    for(z = [zero_z, one_z, two_z, three_z, four_z, five_z, six_z])
     translate([0, 0, z])
     retainer();
 }
@@ -311,6 +314,11 @@ module rack()
         translate([0, -inner_y / 2, 0])
         cube([tolerence + retainer_protrusion + rack_support, tolerence + retainer_protrusion + rack_support, rack_thickness]);
     }
+}
+
+module rack_zero()
+{
+    rack();
 }
 
 module rack_one()
@@ -637,10 +645,13 @@ if (which_model == "viewport")
     echo(str("External Dimensions = ", [outer_x, outer_y, outer_z]));
     echo(str("Top Cuby Height = ", top_z));
 
-    *body();
+    body();
 
-    *translate([0, -outer_y / 2, wall_thickness + tolerence])
+    translate([0, -outer_y / 2, wall_thickness + tolerence])
     door();
+
+    translate([0, 0, zero_z])
+    rack_zero();
 
     translate([0, 0, one_z])
     rack_one_ssd();
@@ -689,6 +700,9 @@ else
     translate([0, -(outer_z - wall_thickness - tolerence) / 2, wall_thickness])
     rotate(-90, [1, 0, 0])
     door();
+
+    else if (which_model == "rack_zero")
+    rack_zero();
 
     else if (which_model == "rack_one_ssd")
     rack_one_ssd();

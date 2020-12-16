@@ -13,6 +13,7 @@ render()
 
 render "body" & \
 render "door" & \
+render "rack_zero" & \
 render "rack_one_ssd" & \
 render "rack_one_drive" & \
 render "rack_two" & \
