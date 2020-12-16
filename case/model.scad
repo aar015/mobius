@@ -72,13 +72,13 @@ switch_hole_x_offset = -30.0;
 
 /*[60mm Fan]*/
 fan_y = tolerence + rack_support;
-fan_z = 67.6;
+fan_z = 65.6;
 fan_inner = 50;
 fan_mount_thickness = 4.4;
 fan_mount_small_thickness = 2.0;
 fan_mount_large = 10.0;
 fan_mount_small = 5.2;
-fan_mount_support = 1.2;
+fan_mount_support = 0.8;
 fan_honeycomb_x = inner_x;
 fan_honeycomb_z = 62.4;
 fan_honeycomb_fill = 11;
@@ -94,7 +94,7 @@ pi_count = 4;
 pi_mount_y = 42;
 pi_mount_z = 42;
 pi_mount_thickness = 4.4;
-pi_mount_support = 0.8;
+pi_mount_support = 0.4;
 pi_screw = 3;
 pi_nut = 6.2;
 
@@ -639,7 +639,7 @@ if (which_model == "viewport")
 
     *body();
 
-    translate([0, -outer_y / 2, wall_thickness + tolerence])
+    *translate([0, -outer_y / 2, wall_thickness + tolerence])
     door();
 
     translate([0, 0, one_z])
