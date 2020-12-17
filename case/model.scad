@@ -94,7 +94,7 @@ pi_count = 4;
 pi_mount_y = 42;
 pi_mount_z = 42;
 pi_mount_thickness = 3.6;
-pi_mount_support = 0.6;
+pi_mount_support = 0.4;
 pi_screw = 3;
 pi_nut = 6.2;
 
