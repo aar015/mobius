@@ -1,12 +1,12 @@
 /*[Global]*/
-render_fn = 256;
+render_fn = 512;
 viewport_fn = 64;
 tolerence = 0.2;
 
 /*[Body]*/
-inner_x = 162.0;
-inner_y = 167.2;
-inner_z = 167.2;
+inner_x = 152.4;
+inner_y = 157.6;
+inner_z = 157.6;
 wall_thickness = 3.6;
 
 /*[Logo]*/
@@ -20,7 +20,6 @@ logo_offset = -6.0;
 
 /*[Rack]*/
 rack_support = 2.4;
-rack_y = 101.4 + tolerence + rack_support;
 rack_thickness = 3.6;
 rack_wall_height = 0.6;
 
@@ -49,7 +48,7 @@ ssd_count = 4;
 /*[2_5 Inch Drive]*/
 drive_x = 69.6;
 drive_y = 100.0;
-drive_z = 21.6;
+drive_z = 9.6;
 
 /*[Network Plug]*/
 plug_x = 23.6;
@@ -63,12 +62,13 @@ plug_hole_z = 16.8;
 /*[Network Switch]*/
 switch_x = 100.4;
 switch_y = 98.8;
-switch_z = 25.6;
+switch_z = 26.4;
 switch_lip = 6.8;
 switch_leg = 15.6;
 switch_hole_x = 12.0;
 switch_hole_z = 14.4;
 switch_hole_x_offset = -30.0;
+switch_y_offset = 18.0;
 
 /*[60mm Fan]*/
 fan_y = tolerence + rack_support;
@@ -88,18 +88,18 @@ honeycomb_stroke = 1.2;
 
 /*[pi]*/
 pi_x = [16.8, 8.4];
-pi_y = rack_y;
+pi_y = 92.0;
 pi_z = fan_z - 2 * (rack_thickness + retainer_thickness + 2 * tolerence);
 pi_count = 4;
 pi_mount_y = 42;
 pi_mount_z = 42;
 pi_mount_thickness = 3.6;
-pi_mount_support = 0.4;
+pi_mount_support = -0.01;
 pi_screw = 3;
 pi_nut = 6.2;
 
 /*[Rack Zero]*/
-zero_z = wall_thickness + tolerence;
+zero_z = wall_thickness + tolerence + 2.4;
 
 /*[Rack One]*/
 one_z = zero_z + rack_thickness + drive_z + 2 * tolerence;
@@ -279,7 +279,7 @@ module body()
                    two_z + rack_thickness + tolerence + plug_z / 2])
         cube([plug_hole_x, wall_thickness + 1, plug_hole_z], true);
 
-        translate([-two_total_x / 2 + 2 * rack_support + 3 * tolerence + plug_x + switch_x / 2 + switch_hole_x_offset, 
+        *translate([-two_total_x / 2 + 2 * rack_support + 3 * tolerence + plug_x + switch_x / 2 + switch_hole_x_offset, 
                    outer_y / 2 - wall_thickness / 2, 
                    two_z + rack_thickness + tolerence + switch_z / 2])
         cube([switch_hole_x, wall_thickness + 1, switch_hole_z], true);
@@ -292,28 +292,18 @@ module body()
 
 module rack()
 {
-    difference()
+    for(i = [-1:2:1])
+    translate([i * inner_x / 2, 0, 0])
     {
-        hull()
-        for(i = [-1:2:1])
-        for(j = [0:1])
-        translate([i * inner_x / 2, inner_y / 2 - j * rack_y + (2 * j - 1) * (retainer_protrusion + tolerence), 0])
+        translate([0, inner_y / 2 - retainer_protrusion - tolerence, 0])
         cylinder(rack_thickness, r=retainer_protrusion + tolerence);
 
-        translate([0, (inner_y - rack_y) / 2, rack_thickness / 2])
-        cube([inner_x - 2 * rack_support, rack_y - 2 * (retainer_protrusion + tolerence + rack_support), rack_thickness + 0.2], true);
+        translate([0, -(retainer_protrusion + rack_support + tolerence) / 4, rack_thickness / 2])
+        cube([2 * tolerence + retainer_protrusion + rack_support, inner_y - (retainer_protrusion + rack_support + tolerence) / 2, rack_thickness], true);
     }
 
-    for(i = [0:1])
-    translate([inner_x / 2 - retainer_protrusion - i * (inner_x + tolerence), 0, 0])
-    hull()
-    {
-        translate([0, inner_y / 2 - rack_y, 0])
-        cube([tolerence + retainer_protrusion + rack_support, tolerence + retainer_protrusion + rack_support, rack_thickness]);
-
-        translate([0, -inner_y / 2, 0])
-        cube([tolerence + retainer_protrusion + rack_support, tolerence + retainer_protrusion + rack_support, rack_thickness]);
-    }
+    translate([0, inner_y / 2 - (2 * tolerence + retainer_protrusion + rack_support) / 2, rack_thickness / 2])
+    cube([inner_x, 2 * tolerence + retainer_protrusion + rack_support, rack_thickness], true);
 }
 
 module rack_zero()
@@ -465,11 +455,11 @@ module rack_two()
         cube([rack_support + tolerence + plug_lip, rack_support, rack_thickness + rack_wall_height * plug_z]);
     }
 
-    translate([plug_x + 2 * tolerence + rack_support, inner_y / 2 - switch_y])
+    translate([plug_x + 2 * tolerence + rack_support, inner_y / 2 - switch_y - switch_y_offset])
     {
         translate([-two_total_x / 2, 0, 0])
         {
-            cube([2 * rack_support + tolerence, switch_y, rack_thickness]);
+            cube([2 * rack_support + tolerence, switch_y + switch_y_offset, rack_thickness]);
 
             translate([0, -tolerence, 0])
             cube([rack_support, switch_leg + tolerence, rack_thickness + rack_wall_height * switch_z]);
@@ -480,7 +470,7 @@ module rack_two()
 
         translate([-two_total_x / 2 + switch_x + tolerence, 0, 0])
         {
-            cube([2 * rack_support + tolerence, switch_y, rack_thickness]);
+            cube([2 * rack_support + tolerence, switch_y + switch_y_offset, rack_thickness]);
 
             translate([rack_support + tolerence, -tolerence, 0])
             cube([rack_support, switch_leg + tolerence, rack_thickness + rack_wall_height * switch_z]);
@@ -493,9 +483,14 @@ module rack_two()
         cube([inner_x, 2 * rack_support + tolerence, rack_thickness]);
 
         for(i = [0:1])
-        translate([-two_total_x / 2 + i * (switch_x - switch_lip + tolerence + rack_support), -rack_support - tolerence, 0])
+        for(j = [0:1])
+        translate([-two_total_x / 2 + i * (switch_x - switch_lip + tolerence + rack_support), 
+                   -rack_support - tolerence + j * (switch_y + rack_support + tolerence), 0])
         cube([rack_support + tolerence + switch_lip, rack_support, rack_thickness + rack_wall_height * switch_z]);
     }
+
+    translate([- inner_x / 2, inner_y / 2 - rack_support - tolerence - switch_y_offset, 0])
+    cube([inner_x, 2 * rack_support + tolerence, rack_thickness]);
 }
 
 module fan_mount()
@@ -529,6 +524,10 @@ module fan_mount()
             cylinder(fan_mount_thickness - fan_mount_small_thickness + 1, r=fan_mount_large / 2 + tolerence);
         }
     }
+
+    *
+    translate([0, 0, - 25 / 2 - tolerence])
+    cube([fan_inner, fan_inner, 25], true);
 }
 
 module rack_three_six()
@@ -551,6 +550,9 @@ module rack_three_six()
                    inner_y / 2 - fan_mount_thickness / 2 - fan_y, 3 * rack_thickness / 4])
         cube([2 * (r + tolerence), fan_mount_thickness + 2 * tolerence, rack_thickness / 2 + 2 * tolerence], true);
     }
+
+    translate([- inner_x / 2, inner_y / 2 - pi_y + pi_mount_r - tolerence - rack_support, 0])
+    cube([inner_x, 2 * (pi_mount_r + tolerence + rack_support), rack_thickness]);
 }
 
 module pi_mount()
@@ -565,14 +567,15 @@ module pi_mount()
     {
         union()
         {
+            rotate(90, [1, 0, 0])
             rotate(90, [0, 1, 0])
-            cylinder(pi_mount_thickness, r=r);
+            cylinder(pi_mount_thickness, r=r, $fn=6);
 
             translate([pi_mount_thickness / 2, 0, (pi_z - pi_mount_z) / 4 + tolerence / 2 + rack_thickness / 4])
             cube([pi_mount_thickness, 2 * r, (pi_z - pi_mount_z) / 2 + tolerence + rack_thickness / 2], true);
 
             translate([pi_mount_thickness / 2, j * 3 * r / 3, 0])
-            cube([pi_mount_thickness, 2 * r, 2 * r], true);
+            cube([pi_mount_thickness, 2 * r, 2 * r * sin(60)], true);
 
             translate([pi_mount_thickness / 2, -j * pi_mount_y / 4, 3 * r / 2])
             cube([pi_mount_thickness, pi_mount_y / 2, r], true);
@@ -585,7 +588,8 @@ module pi_mount()
         {
             translate([0, 0, -0.1])
             cylinder(pi_mount_thickness + 0.2, r=pi_screw / 2 + tolerence);
-
+            
+            rotate(90, [0, 0, 1])
             translate([0, 0, pi_mount_thickness / 2])
             cylinder(pi_mount_thickness / 2 + 0.1, r=pi_nut / 2 + tolerence, $fn=6);
         }
@@ -603,9 +607,6 @@ module pi_rack()
     for(i = [0:1])
     translate([-inner_x / 2, inner_y / 2 - pi_y + pi_mount_r - tolerence - rack_support + i * pi_mount_y, 0])
     cube([inner_x, 2 * (pi_mount_r + tolerence + rack_support), rack_thickness]);
-
-    translate([0, (inner_y + tolerence + retainer_protrusion + rack_support) / 2 - pi_y, rack_thickness / 2])
-    cube([inner_x, tolerence + retainer_protrusion + rack_support, rack_thickness], true);
 }
 
 module rack_four()
