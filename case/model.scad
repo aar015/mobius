@@ -1,6 +1,6 @@
 /*[Global]*/
 render_fn = 512;
-viewport_fn = 64;
+viewport_fn = 32;
 tolerence = 0.2;
 
 /*[Body]*/
@@ -49,6 +49,9 @@ ssd_count = 4;
 drive_x = 69.6;
 drive_y = 100.0;
 drive_z = 9.6;
+drive_screw = 3;
+drive_inner_x = 61.6;
+drive_inner_y = 76.6;
 
 /*[Network Plug]*/
 plug_x = 23.6;
@@ -309,6 +312,30 @@ module rack()
 module rack_zero()
 {
     rack();
+
+    translate([0, inner_y / 2 - power_y + drive_screw / 2 + drive_inner_y / 2, 0])
+    for(i = [-1:2:1])
+    difference()
+    {
+        union()
+        {
+            translate([0, i * drive_inner_y / 2, rack_thickness / 2])
+            cube([inner_x, drive_screw + 2 * tolerence + 2 * rack_support, rack_thickness], true);
+
+            translate([0, 0, rack_thickness / 2])
+            cube([drive_screw + 2 * tolerence + 2 * rack_support, drive_inner_y, rack_thickness], true);
+        }
+
+        for(j = [-1:2:1])
+        for(k = [-1:2:1])
+        translate([j * drive_inner_x / 2 + k * inner_x / 4, i * drive_inner_y / 2, -tolerence])
+        cylinder(rack_thickness + 2 * tolerence, r=drive_screw / 2 + tolerence);
+    }
+
+    *#
+    for(k = [-1:2:1])
+    translate([k * inner_x / 4, inner_y / 2 - power_y + drive_screw / 2 + drive_inner_y / 2, drive_z / 2 + rack_thickness + tolerence])
+    cube([drive_x, drive_y, drive_z], true);  
 }
 
 module rack_one()
@@ -413,7 +440,26 @@ module rack_one_ssd()
 
 module rack_one_drive()
 {
-    rack_one();
+    difference()
+    {
+        union()
+        {
+            rack_one();
+
+            translate([-one_total_x / 2 + 2 * rack_support + 3 * tolerence + power_x + drive_x / 2, inner_y / 2 - power_y + drive_screw / 2 + drive_inner_y / 2, 0])
+            for(i = [-1:2:1])
+            translate([0, i * drive_inner_y / 2, rack_thickness / 2])
+            cube([drive_x + 5, drive_screw + 2 * tolerence + 2 * rack_support, rack_thickness], true);
+        }
+
+        translate([-one_total_x / 2 + 2 * rack_support + 3 * tolerence + power_x + drive_x / 2, inner_y / 2 - power_y + drive_screw / 2 + drive_inner_y / 2, 0])
+        {
+            for(i = [-1:2:1])
+            for(j = [-1:2:1])
+            translate([i * drive_inner_x / 2, j * drive_inner_y / 2, -tolerence])
+            cylinder(rack_thickness + 2 * tolerence, r=drive_screw / 2 + tolerence);
+        }
+    }
 
     *#translate([-one_total_x / 2 + 2 * rack_support + 3 * tolerence + power_x, inner_y / 2 - drive_y, rack_thickness + tolerence])
     cube([drive_x, drive_y, drive_z]);
@@ -655,7 +701,7 @@ if (which_model == "viewport")
     rack_zero();
 
     translate([0, 0, one_z])
-    rack_one_ssd();
+    rack_one_drive();
 
     translate([0, 0, two_z])
     rack_two();
