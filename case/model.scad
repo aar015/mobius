@@ -1,6 +1,6 @@
 /*[Global]*/
 render_fn = 512;
-viewport_fn = 32;
+viewport_fn = 64;
 tolerence = 0.2;
 
 /*[Body]*/
@@ -313,7 +313,7 @@ module rack_zero()
 {
     rack();
 
-    translate([0, inner_y / 2 - power_y + drive_screw / 2 + drive_inner_y / 2, 0])
+    translate([0, inner_y / 2 - drive_y / 2 - tolerence, 0])
     for(i = [-1:2:1])
     difference()
     {
@@ -334,7 +334,7 @@ module rack_zero()
 
     *#
     for(k = [-1:2:1])
-    translate([k * inner_x / 4, inner_y / 2 - power_y + drive_screw / 2 + drive_inner_y / 2, drive_z / 2 + rack_thickness + tolerence])
+    translate([k * inner_x / 4, inner_y / 2 - drive_y / 2 - tolerence, drive_z / 2 + rack_thickness + tolerence])
     cube([drive_x, drive_y, drive_z], true);  
 }
 
@@ -694,7 +694,7 @@ if (which_model == "viewport")
 
     body();
 
-    translate([0, -outer_y / 2, wall_thickness + tolerence])
+    *translate([0, -outer_y / 2, wall_thickness + tolerence])
     door();
 
     translate([0, 0, zero_z])
