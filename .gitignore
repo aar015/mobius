@@ -1,4 +1,2 @@
-*.img
-secrets/*
 armbian/*
 *.gcode
