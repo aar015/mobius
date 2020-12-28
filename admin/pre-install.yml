@@ -1,0 +1,16 @@
+---
+
+- hosts: k3s_cluster
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Ensure libnss-mdns is installed.
+      apt:
+        name: libnss-mdns
+        state: latest
+
+    - name: Ensure iperf3 is installed.
+      apt:
+        name: iperf3
+        state: latest
