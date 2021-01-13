@@ -1,0 +1,10 @@
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: openebs
+  namespace: kube-system
+spec:
+  chart: openebs
+  repo: https://openebs.github.io/charts/
+  targetNamespace: openebs
