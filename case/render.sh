@@ -5,20 +5,19 @@ OPENSCAD=/usr/bin/openscad
 render()
 {
     echo "Processing "${1}"..."
-    file_name=stl/${1}.stl
+    file_name=stl/${2}.stl
+    log_name=logs/${2}-log.txt
     rm -f ${file_name}
-    ${OPENSCAD} -o ${file_name} -D 'which_model="'${1}'"' \
-    model.scad
+    rm -f ${log_name}
+    ${OPENSCAD} -o ${file_name} -D 'model="'${1}'"' -D 'resolution="render"' &> ${log_name} model.scad
+    echo "Finished "${1}"..."
 }
 
-render "body" & \
-render "door" & \
-render "rack_zero" & \
-render "rack_one_ssd" & \
-render "rack_one_drive" & \
-render "rack_two" & \
-render "rack_three_six" & \
-render "rack_four" & \
-render "rack_five" & \
-render "fan_mount" & \
-render "pi_mount"
+render "bottom" "bottom_x1" & \
+render "level-two" "level_one_x1" & \
+render "level-four" "level_two_three_x2" & \
+render "top" "top_x1" & \
+render "front-wall" "wall_x3" & \
+render "back-wall" "back_x1" & \
+render "pi-mount" "mount_x4"
+wait
