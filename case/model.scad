@@ -6,20 +6,21 @@ viewport_fn = 64;
 render_fn = 512;
 
 /* [Walls] */
-wall_thickness = 7.2;
+wall_thickness = 6.0;
 wall_bracket_thickness = 3.6;
-wall_bracket_z = 10;
+wall_bracket_z = 10.8;
 wall_screw = 3;
 wall_screw_head = 6;
-wall_screw_head_thickness = 1.6;
+wall_screw_head_thickness = 2.4;
 wall_nut = 6.2;
+wall_nut_thickness = 2.4;
 
 /* [Levels] */
-inner_x = 185.2;
-inner_y = 185.2;
-level_thickness = 2.4;
+inner_x = 187.2;
+inner_y = 187.2;
+level_thickness = 3.6;
 level_support = 2.4;
-level_wall_z = 0.6;
+level_wall_z = 0.8;
 level_one_z = 30;
 level_two_z = 30;
 level_three_z = 65;
@@ -30,43 +31,43 @@ outer_y = inner_y + 2 * wall_thickness;
 outer_z = inner_z + 2 * wall_thickness;
 level_screw = 3;
 level_screw_head = 6;
-level_screw_head_thickness = 1.6;
+level_screw_head_thickness = 2.4;
 level_rod = 4.8;
 working_x = inner_x - 2 * wall_bracket_thickness - wall_bracket_z - level_rod;
 working_y = inner_y - 2 * wall_bracket_thickness - wall_bracket_z - level_rod;
 
 /* [Power Block] */
 power_x = 69.6;
-power_y = 101.4;
+power_y = 102;
 power_z = 30;
 power_lip = 4.8;
 power_leg = 15.6;
 power_hole_x = 26.4;
 power_hole_z = 14.4;
-power_hole_z_offset = -2.0;
+power_hole_z_offset = -2.4;
 
 /*[Network Plug]*/
-plug_x = 23.6;
+plug_x = 24;
 plug_y = 43.2;
-plug_z = 26.4;
+plug_z = 30;
 plug_lip = 4.8;
 plug_leg = 15.6;
 plug_hole_x = 16.8;
 plug_hole_z = 16.8;
 
 /* [Portable SSD] */
-ssd_x = 9.2;
-ssd_y = 101.4;
+ssd_x = 9.6;
+ssd_y = 102;
 ssd_z = 30;
 ssd_lip = 1.2;
 ssd_leg = 15.6;
 ssd_count = 3;
 
 /*[Network Switch]*/
-switch_x = 100.4;
-switch_y = 98.8;
-switch_z = 26.4;
-switch_lip = 6.8;
+switch_x = 100.8;
+switch_y = 99.6;
+switch_z = 30;
+switch_lip = 6;
 switch_leg = 15.6;
 switch_y_offset = 18.0;
 
@@ -80,7 +81,7 @@ drive_inner_y = 76.6;
 
 /* [Pi] */
 pi_x = [16.8, 8.4];
-pi_y = 92.0;
+pi_y = 92.4;
 pi_count = 4;
 pi_mount_y = 42;
 pi_mount_z = 42;
@@ -97,19 +98,19 @@ fan_inner = 50;
 fan_outer = 60;
 fan_x_sep = 25.2;
 fan_y_sep = 25.2;
-fan_mount_thickness = 2.0;
-fan_mount_large = 10.0;
+fan_mount_thickness = 1.8;
+fan_mount_large = 10.8;
 fan_mount_small = 5.2;
 fan_mount_support = 1.2;
 
 /* [Fan Controller] */
-ctrl_x = 60.8;
+ctrl_x = 61.2;
 ctrl_y = 20.4;
 ctrl_z = 16.8;
 ctrl_hole = 16;
 
 /* [Handle] */
-handle_z = 32.2;
+handle_z = 31.2;
 handle_mount_z = 13.2;
 handle_screw = 3.8;
 handle_mount_support = 2.4;
@@ -118,12 +119,13 @@ handle_mount_x = 128.4;
 /* [Window] */
 window_x = 178;
 window_y = 127;
-window_padding = 4.8;
+window_padding = 3.6;
 window_inner_x = window_x - 2 * window_padding;
 window_inner_y = window_y - 2 * window_padding;
 window_screw = 3;
 window_nut = 6.2;
-window_bracket_thicknes = 4.8;
+window_nut_thickness = 2.4;
+window_bracket_thicknes = 3.6;
 window_bracket_l = 2 * window_padding + 2 * tolerence;
 
 /* [Slats] */
@@ -147,7 +149,8 @@ module wall_bracket()
         {
             translate([0, 0, -wall_bracket_thickness / 2 - 0.1])
             cylinder(wall_bracket_thickness + 0.2, r=wall_screw / 2 + tolerence, $fn=render_fn);
-            cylinder(wall_bracket_thickness / 2 + 0.1, r=wall_nut / 2 + tolerence, $fn=6);
+            translate([0, 0, wall_bracket_thickness / 2 - wall_nut_thickness])
+            cylinder(wall_nut_thickness + 0.1, r=wall_nut / 2 + tolerence, $fn=6);
         }
     }
 }
@@ -162,7 +165,8 @@ module window_bracket()
         {
             translate([0, 0, -window_bracket_thicknes / 2 - 0.1])
             cylinder(window_bracket_thicknes + 0.2, r=window_screw / 2 + tolerence, $fn=render_fn);
-            cylinder(window_bracket_thicknes / 2 + 0.1, r=window_nut / 2 + tolerence, $fn=6);
+            translate([0, 0, window_bracket_thicknes / 2 - window_nut_thickness])
+            cylinder(window_nut_thickness + 0.1, r=window_nut / 2 + tolerence, $fn=6);
         }
     }
 }
@@ -193,6 +197,7 @@ module top_bottom()
                     j * ((inner_y - wall_bracket_z) / 2 - wall_bracket_thickness),
                     (wall_bracket_z + wall_thickness) / 2 - tolerence])
             rotate(-90, [0, 1, 0])
+            rotate(90, [0, 0, 1])
             wall_bracket();
 
             for(i = [0:180:180])
@@ -755,7 +760,7 @@ module pi_mount()
 
 module all()
 {
-    echo(str("External Dimensions = ", [outer_x + 2 * tolerence, outer_y + 2 * tolerence, outer_z + handle_z]));
+    echo(str("External Dimensions = ", [outer_x, outer_y, outer_z + handle_z]));
     echo(str("Working Area = ", [working_x, working_y]))
 
     translate([0, 0, inner_z + 2 * wall_thickness])
