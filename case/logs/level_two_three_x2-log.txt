@@ -2,7 +2,7 @@ Geometries in cache: 41
 Geometry cache size in bytes: 988024
 CGAL Polyhedrons in cache: 19
 CGAL cache size in bytes: 47598384
-Total rendering time: 0:00:49.057
+Total rendering time: 0:00:43.826
    Top level object is a 3D object:
    Simple:        yes
    Vertices:     5238

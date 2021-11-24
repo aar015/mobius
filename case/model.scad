@@ -57,7 +57,7 @@ plug_hole_z = 16.8;
 
 /* [Portable SSD] */
 ssd_x = 9.6;
-ssd_y = 102;
+ssd_y = 99.6;
 ssd_z = 30;
 ssd_lip = 1.2;
 ssd_leg = 15.6;
@@ -85,6 +85,7 @@ pi_y = 92.4;
 pi_count = 4;
 pi_mount_y = 42;
 pi_mount_z = 42;
+pi_mount_extra_z = 2.4;
 pi_mount_thickness = 2.4;
 pi_mount_support = -0.01;
 pi_screw = 3;
@@ -340,7 +341,7 @@ module ssd_cradle()
         }
 
         for(i = [0:1])
-        translate([0, i * (power_y + level_support + 2 * tolerence), 0])
+        translate([0, i * (ssd_y + level_support + 2 * tolerence), 0])
         {
             translate([0, - (i + 1) * (level_support + tolerence), 0])
             cube([ssd_x + 2 * level_support + 2 * tolerence, 2 * level_support + tolerence, level_thickness]);
@@ -731,8 +732,8 @@ module pi_mount()
             rotate(90, [0, 1, 0])
             cylinder(pi_mount_thickness, r=r, $fn=6);
 
-            translate([pi_mount_thickness / 2, 0, (level_three_z - pi_mount_z) / 4 + level_thickness / 2])
-            cube([pi_mount_thickness, 2 * r, (level_three_z - pi_mount_z) / 2 +  level_thickness], true);
+            translate([pi_mount_thickness / 2, 0, (level_three_z - pi_mount_z) / 4 + (level_thickness + pi_mount_extra_z) / 2])
+            cube([pi_mount_thickness, 2 * r, (level_three_z - pi_mount_z) / 2 + level_thickness + pi_mount_extra_z], true);
 
             translate([pi_mount_thickness / 2, j * 3 * r / 3, 0])
             cube([pi_mount_thickness, 2 * r, 2 * r * sin(60)], true);
