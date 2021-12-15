@@ -1,2 +1,4 @@
 armbian/*
 secrets/*
+case/gcode/*
+case/logs/*

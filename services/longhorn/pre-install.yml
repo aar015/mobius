@@ -1,0 +1,20 @@
+---
+- hosts: k3s_cluster
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Ensure open-iscsi is installed.
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        force_apt_get: yes
+        name: open-iscsi
+        state: latest
+    
+    - name: Ensure iscsid is running and starts at boot.
+      systemd:
+        name: iscsid
+        state: started
+        enabled: yes
+        daemon_reload: yes
