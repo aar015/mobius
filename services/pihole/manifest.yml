@@ -1,1 +1,21 @@
 ---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: pihole
+  namespace: kube-system
+spec:
+  chart: pihole
+  repo: https://mojo2600.github.io/pihole-kubernetes/
+  targetNamespace: pihole
+  set:
+    adminPassword: admin
+    ingress:
+      enabled: true
+      hosts: ["pihole.mobius"]
+    persistentVolumeClaim:
+      enabled: true
+    serviceWeb:
+      https:
+        enabled: false
+      type: Ingress
