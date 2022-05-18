@@ -61,7 +61,7 @@ ssd_y = 99.6;
 ssd_z = 30;
 ssd_lip = 1.2;
 ssd_leg = 15.6;
-ssd_count = 3;
+ssd_count = 4;
 
 /*[Network Switch]*/
 switch_x = 100.8;
@@ -134,27 +134,8 @@ slat_width = 2.4;
 slat_sep = 7.2;
 slat_num = 2;
 
-/* [Level One] */
-bottom_x = power_x + plug_x + 3 * level_support + 4 * tolerence + ssd_count * (ssd_x + level_support + 2 * tolerence);
-
-/* [Level Two] */
-level_two_x = switch_x + drive_x + 2 * level_support + 4 * tolerence;
-
-module wall_bracket()
-{
-    translate([0, 0, wall_bracket_thickness / 2])
-    difference()
-    {
-        cube([wall_bracket_z, wall_bracket_z, wall_bracket_thickness], true);
-        union()
-        {
-            translate([0, 0, -wall_bracket_thickness / 2 - 0.1])
-            cylinder(wall_bracket_thickness + 0.2, r=wall_screw / 2 + tolerence, $fn=render_fn);
-            translate([0, 0, wall_bracket_thickness / 2 - wall_nut_thickness])
-            cylinder(wall_nut_thickness + 0.1, r=wall_nut / 2 + tolerence, $fn=6);
-        }
-    }
-}
+/* [Top] */
+wall_peg = inner_x / 7;
 
 module window_bracket()
 {
@@ -177,39 +158,7 @@ module top_bottom()
     difference()
     {
         translate([0, 0, wall_thickness / 2])
-        {   
-            difference()
-            {
-                hull()
-                {
-                    cube([inner_x, inner_y, wall_thickness], true);
-                    translate([0, 0, -wall_thickness / 2 - 0.5])
-                    cube([outer_x, outer_y, 1], true);
-                }
-
-                translate([0, 0, -wall_thickness / 2 - 1])
-                cube([outer_x + 1, outer_y + 1, 2], true);
-            }
-
-            for(i = [0:180:180])
-            rotate(i, [0, 0, 1])
-            for(j = [-1:2:1])
-            translate([inner_x / 2,
-                    j * ((inner_y - wall_bracket_z) / 2 - wall_bracket_thickness),
-                    (wall_bracket_z + wall_thickness) / 2 - tolerence])
-            rotate(-90, [0, 1, 0])
-            rotate(90, [0, 0, 1])
-            wall_bracket();
-
-            for(i = [0:180:180])
-            rotate(i, [0, 0, 1])
-            for(j = [-1:2:1])
-            translate([j * ((inner_x - wall_bracket_z) / 2 - wall_bracket_thickness),
-                    inner_y / 2,
-                    (wall_bracket_z + wall_thickness) / 2 - tolerence])
-            rotate(90, [1, 0, 0])
-            wall_bracket();
-        }
+        cube([outer_x, outer_y, wall_thickness], true);
 
         for(i = [-1:2:1])
         for(j = [-1:2:1])
@@ -221,15 +170,12 @@ module top_bottom()
             translate([0, 0, -1])
             cylinder(level_screw_head_thickness + 1, r=level_screw_head / 2 + tolerence);
         }
-    }
 
-    for(i = [0:90:270])
-    rotate(i, [0, 0, 1])
-    translate([inner_x / 2 - wall_bracket_thickness, inner_y / 2 - wall_bracket_thickness, wall_thickness - tolerence])
-    intersection()
-    {
-        cylinder(wall_bracket_z, r=wall_bracket_thickness);
-        cube(wall_bracket_z);
+        for(i = [0:90:270])
+        rotate(i, [0, 0, 1])
+        for(j = [-1:1])
+        translate([2 * j * wall_peg, outer_y / 2 - 3 * wall_thickness / 4, wall_thickness / 2])
+        cube([wall_peg + 2 * tolerence, wall_thickness / 2 + 2 * tolerence, wall_thickness + 1], true);
     }
 }
 
@@ -256,6 +202,9 @@ module top()
         cube([working_x, slat_width, wall_thickness + 1], true);
     }
 }
+
+/* [Bottom] */
+bottom_x = power_x + plug_x + 3 * level_support + 4 * tolerence + ssd_count * (ssd_x + level_support + 2 * tolerence);
 
 module power_cradle()
 {
@@ -373,56 +322,57 @@ module bottom()
     }
 }
 
-module front_back_wall()
+/* [Walls] */
+
+module base_wall()
 {
     difference()
     {
         hull()
         {
             translate([0, 0, wall_thickness / 2])
-            cube([inner_x, inner_z, wall_thickness], true);
+            cube([inner_x, inner_z - 2 * tolerence, wall_thickness], true);
             translate([0, 0, -0.5])
-            cube([outer_x, outer_z, 1], true);
+            cube([outer_x, inner_z - 2 * tolerence, 1], true);
         }
-        translate([0, 0, -1])
-        cube([outer_x + 1, outer_z + 1, 2], true);
 
-        for(i = [-1:2:1])
-        for(j = [-1:2:1])
-        translate([i * (inner_x / 2 - wall_bracket_z / 2 - wall_bracket_thickness),
-                   j * (inner_z / 2 - wall_bracket_z / 2 + tolerence), 0])
-        {
-            translate([0, 0, -0.5])
-            cylinder(wall_thickness + 1, r=wall_screw / 2 + tolerence);
-            translate([0, 0, -1])
-            cylinder(wall_screw_head_thickness + 1, r=wall_screw_head / 2 + tolerence);
-        }
+        translate([0, 0, -1])
+        cube([outer_x + 1, inner_z -2 * tolerence + 1, 2], true);
     }
+
+    for(i = [-1:1])
+    for(j = [-1:2:1])
+    translate([2 * i * wall_peg, j * (inner_z / 2 + wall_thickness / 2 - tolerence - 0.05), 3 * wall_thickness / 4])
+    cube([wall_peg, wall_thickness + 0.1, wall_thickness / 2], true);
 }
 
-module front_wall()
+module window_wall()
 {
     difference()
     {
-        front_back_wall();
+        base_wall();
 
         translate([0, 0, wall_thickness / 2])
         cube([window_x + 2 * tolerence, window_y + 2 * tolerence, wall_thickness + 1], true);
     }
 
-    for(i = [-1:2:1])
-    for(j = [-1:2:1])
-    translate([i * window_inner_x / 2, j * window_inner_y / 2, window_bracket_thicknes])
+    translate([0, 0, wall_thickness])
     rotate(180, [1, 0, 0])
-    window_bracket();
+    {
+        for(i = [-1:2:1])
+        for(j = [-1:2:1])
+        translate([i * window_inner_x / 2, j * window_inner_y / 2, window_bracket_thicknes])
+        rotate(180, [1, 0, 0])
+        window_bracket();
 
-    for(i = [-1:2:1])
-    translate([i * (window_inner_x - i * window_bracket_l) / 2, (window_bracket_l - window_inner_y - 0.1) / 2, 0])
-    cube([window_bracket_l, window_inner_y - window_bracket_l + 0.1, window_bracket_thicknes]);
+        for(i = [-1:2:1])
+        translate([i * (window_inner_x - i * window_bracket_l) / 2, (window_bracket_l - window_inner_y - 0.1) / 2, 0])
+        cube([window_bracket_l, window_inner_y - window_bracket_l + 0.1, window_bracket_thicknes]);
 
-    for(i = [-1:2:1])
-    translate([(window_bracket_l - window_inner_x - 0.1) / 2, i * (window_inner_y - i * window_bracket_l) / 2, 0])
-    cube([window_inner_x - window_bracket_l + 0.1, window_bracket_l,window_bracket_thicknes]);
+        for(i = [-1:2:1])
+        translate([(window_bracket_l - window_inner_x - 0.1) / 2, i * (window_inner_y - i * window_bracket_l) / 2, 0])
+        cube([window_inner_x - window_bracket_l + 0.1, window_bracket_l,window_bracket_thicknes]);
+    }
 }
 
 module back_wall()
@@ -430,7 +380,7 @@ module back_wall()
     fan_hole = fan_inner - sqrt(2) * (fan_mount_large / 2 + tolerence + fan_mount_support);
 
     difference() {
-        front_back_wall();
+        base_wall();
 
         for(k = [-1:2:1])
         translate([
@@ -481,60 +431,26 @@ module back_wall()
     }
 }
 
-module left_right_wall()
-{
-    difference()
-    {
-        hull()
-        {
-            translate([0, 0, wall_thickness / 2])
-            cube([inner_z, inner_y, wall_thickness], true);
-            translate([0, 0, -0.5])
-            cube([outer_z, outer_y, 1], true);
-        }
-        translate([0, 0, -1])
-        cube([outer_z + 1, outer_y + 1, 2], true);
-
-        for(i = [-1:2:1])
-        for(j = [-1:2:1])
-        translate([i * (inner_z / 2 - wall_bracket_z / 2 + tolerence), 
-                   j * (inner_y / 2 - wall_bracket_z / 2 - wall_bracket_thickness), 0])
-        {
-            translate([0, 0, -0.5])
-            cylinder(wall_thickness + 1, r=wall_screw / 2 + tolerence);
-            translate([0, 0, -1])
-            cylinder(wall_screw_head_thickness + 1, r=wall_screw_head / 2 + tolerence);
-        }
-    }
-}
-
-module left_wall()
-{
-    left_right_wall();
-}
-
-module right_wall()
-{
-    left_right_wall();
-}
-
 module walls()
 {
-    translate([0, -inner_y / 2 - wall_thickness - tolerence, outer_z / 2])
+    translate([0, -inner_y / 2 - wall_thickness, outer_z / 2])
     rotate(-90, [1, 0, 0])
-    front_wall();
-    translate([0, inner_y / 2 + wall_thickness + tolerence, outer_z / 2])
+    window_wall();
+    translate([0, inner_y / 2 + wall_thickness, outer_z / 2])
     rotate(90, [1, 0, 0])
     back_wall();
-    translate([-inner_x / 2 - wall_thickness - tolerence, 0, outer_z / 2])
+    translate([-inner_x / 2 - wall_thickness, 0, outer_z / 2])
     rotate(90, [0, 1, 0])
     rotate(90, [0, 0, 1])
-    front_wall();
-    translate([inner_x / 2 + wall_thickness + tolerence, 0, outer_z / 2])
+    window_wall();
+    translate([inner_x / 2 + wall_thickness, 0, outer_z / 2])
     rotate(-90, [0, 1, 0])
     rotate(90, [0, 0, 1])
-    front_wall();
+    window_wall();
 }
+
+/* [Level Two] */
+level_two_x = switch_x + drive_x + 2 * level_support + 4 * tolerence;
 
 module level()
 {   
@@ -680,6 +596,8 @@ module level_two()
     cube([drive_x, drive_y, drive_z]);
 }
 
+/* [Level Three] */
+
 module level_three()
 {
     difference()
@@ -707,6 +625,8 @@ module level_three()
     }
 }
 
+/* [Level Four] */
+
 module level_four()
 {
     level_three();
@@ -714,6 +634,8 @@ module level_four()
     translate([0, (inner_y - ctrl_y) / 2, level_thickness / 2])
     cube([ctrl_x, ctrl_y, level_thickness], true);
 }
+
+/* [Pi Mounts] */
 
 module pi_mount()
 {
@@ -759,6 +681,8 @@ module pi_mount()
     *cube([pi_x[0] + pi_x[1], pi_mount_y, pi_mount_z], true);
 }
 
+/* [Compose] */
+
 module all()
 {
     echo(str("External Dimensions = ", [outer_x, outer_y, outer_z + handle_z]));
@@ -793,10 +717,10 @@ module render()
     if (model == "all") all();
     else if (model == "top") top();
     else if (model == "bottom") bottom();
-    else if (model == "front-wall") front_wall();
+    else if (model == "front-wall") window_wall();
     else if (model == "back-wall") back_wall();
-    else if (model == "left-wall") left_wall();
-    else if (model == "right-wall") right_wall();
+    else if (model == "left-wall") window_wall();
+    else if (model == "right-wall") window_wall();
     else if (model == "level-two") level_two();
     else if (model == "level-three") level_three();
     else if (model == "level-four") level_four();
